@@ -126,7 +126,7 @@ class LayoutManager(
                     calculateVerticalTooltipPosition(
                         measuredTooltip,
                         TOP,
-                        false
+                        ignoreCursor = false
                     )
                 )
 
@@ -329,6 +329,9 @@ class LayoutManager(
             else
                 EMPTY_DOUBLE_RANGE
 
+            //todo !!! tmp decision but need to use targetCoordY for stemY for geom_point
+            val tmp = (measuredTooltip.tooltipSpec.layoutHint.pointerStyle?.size != null)
+
             if (myVerticalAlignmentResolver.resolve(
                     topTooltipRange,
                     bottomTooltipRange,
@@ -337,10 +340,10 @@ class LayoutManager(
                 ) === TOP
             ) {
                 tooltipY = topTooltipRange.start()
-                stemY = targetTopPoint
+                stemY = if (!tmp) targetTopPoint else targetCoordY
             } else {
                 tooltipY = bottomTooltipRange.start()
-                stemY = targetBottomPoint
+                stemY = if (!tmp) targetBottomPoint else targetCoordY
             }
         }
 
@@ -419,7 +422,9 @@ class LayoutManager(
     }
 
     private fun calculateCursorTooltipPosition(measuredTooltip: MeasuredTooltip): PositionedTooltip {
-        val tooltipX = centerInsideRange(myCursorCoord.x, measuredTooltip.size.x, myHorizontalSpace)
+        // todo make left aligned tooltip
+        val tooltipX = // centerInsideRange(myCursorCoord.x, measuredTooltip.size.x, myHorizontalSpace)
+            leftAlignedInsideRange(myCursorCoord.x, measuredTooltip.size.x, myHorizontalSpace)
 
         val targetCoordY = myCursorCoord.y
         val tooltipHeight = measuredTooltip.size.y
@@ -603,6 +608,10 @@ class LayoutManager(
 
         private fun centerInsideRange(position: Double, size: Double, range: DoubleRange): Double {
             return moveIntoLimit(centered(position, size), range).start()
+        }
+
+        private fun leftAlignedInsideRange(position: Double, size: Double, range: DoubleRange): Double {
+            return moveIntoLimit(leftAligned(position, size, 0.0), range).start()
         }
 
         private fun List<PositionedTooltip>.select(vararg kinds: Kind): List<PositionedTooltip> {

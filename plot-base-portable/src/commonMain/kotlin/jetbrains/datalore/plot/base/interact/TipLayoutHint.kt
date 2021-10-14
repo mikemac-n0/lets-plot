@@ -14,14 +14,21 @@ open class TipLayoutHint(
     open val coord: DoubleVector?,
     open val objectRadius: Double,
     open val color: Color?,
-    open val stemLength: StemLength
+    open val stemLength: StemLength,
+    open val pointerStyle: PointerStyle?
 ) {
 
     enum class StemLength(val value: Double) {
-        NORMAL(12.0),
+        NORMAL(8.0 + 16.0),
         SHORT(5.0),
         NONE(0.0)
     }
+
+    class PointerStyle(
+        val fillColor: Color? = Color.BLACK,
+        val strokeColor: Color = Color.WHITE,
+        val size: Double = 2.0
+    )
 
     override fun toString(): String {
         return "$kind"
@@ -40,13 +47,20 @@ open class TipLayoutHint(
 
     companion object {
 
-        fun verticalTooltip(coord: DoubleVector?, objectRadius: Double, color: Color?, stemLength: StemLength = StemLength.NORMAL): TipLayoutHint {
+        fun verticalTooltip(
+            coord: DoubleVector?,
+            objectRadius: Double,
+            color: Color?,
+            stemLength: StemLength = StemLength.NORMAL,
+            pointerStyle: PointerStyle? = null
+        ): TipLayoutHint {
             return TipLayoutHint(
                 Kind.VERTICAL_TOOLTIP,
                 coord,
                 objectRadius,
                 color,
-                stemLength
+                stemLength,
+                pointerStyle
             )
         }
 
@@ -56,7 +70,8 @@ open class TipLayoutHint(
                 coord,
                 objectRadius,
                 color,
-                stemLength
+                stemLength,
+                pointerStyle = null
             )
         }
 
@@ -66,7 +81,8 @@ open class TipLayoutHint(
                 coord = coord,
                 objectRadius = 0.0,
                 color = color,
-                stemLength = stemLength
+                stemLength = stemLength,
+                pointerStyle = null
             )
         }
 
@@ -76,7 +92,8 @@ open class TipLayoutHint(
                 coord = coord,
                 objectRadius = axisRadius,
                 color = color,
-                stemLength = stemLength
+                stemLength = stemLength,
+                pointerStyle = null
             )
         }
 
@@ -86,17 +103,19 @@ open class TipLayoutHint(
                 coord = coord,
                 objectRadius = axisRadius,
                 color = color,
-                stemLength = stemLength
+                stemLength = stemLength,
+                pointerStyle = null
             )
         }
 
-        fun rotatedTooltip(coord: DoubleVector?, objectRadius: Double, color: Color?, stemLength: StemLength = StemLength.SHORT): TipLayoutHint {
+        fun rotatedTooltip(coord: DoubleVector?, objectRadius: Double, color: Color?, stemLength: StemLength = StemLength.NORMAL): TipLayoutHint {
             return TipLayoutHint(
                 Kind.ROTATED_TOOLTIP,
                 coord,
                 objectRadius,
                 color,
-                stemLength
+                stemLength,
+                pointerStyle = null
             )
         }
     }

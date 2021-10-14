@@ -18,6 +18,7 @@ import jetbrains.datalore.plot.base.geom.util.GeomHelper
 import jetbrains.datalore.plot.base.geom.util.HintColorUtil.fromColorValue
 import jetbrains.datalore.plot.base.interact.GeomTargetCollector.TooltipParams
 import jetbrains.datalore.plot.base.interact.GeomTargetCollector.TooltipParams.Companion.params
+import jetbrains.datalore.plot.base.interact.TipLayoutHint
 import jetbrains.datalore.plot.base.render.LegendKeyElementFactory
 import jetbrains.datalore.plot.base.render.SvgRoot
 import jetbrains.datalore.plot.base.render.point.NamedShape
@@ -57,10 +58,17 @@ open class PointGeom : GeomBase() {
                 val location = helper.toClient(DoubleVector(x!!, y!!), p)
 
                 val shape = p.shape()!!
-
+                val radius = sizeUnitRatio * shape.size(p) / 2
                 targetCollector.addPoint(
-                    i, location, sizeUnitRatio * shape.size(p) / 2,
+                    i, location, radius,
                     tooltipParams(p)
+                        .setPointerStyle(
+                            TipLayoutHint.PointerStyle(
+                                fillColor = null,   // no fill
+                                strokeColor = Color.BLACK,
+                                size = radius + 2.0 // increase radius
+                            )
+                        )
                 )
                 val o = PointShapeSvg.create(shape, location, p, sizeUnitRatio)
                 o.appendTo(slimGroup)

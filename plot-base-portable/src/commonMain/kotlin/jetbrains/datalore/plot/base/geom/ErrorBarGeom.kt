@@ -63,13 +63,7 @@ class ErrorBarGeom : GeomBase() {
 
     private fun buildHints(rect: DoubleRectangle, p: DataPointAesthetics, ctx: GeomContext, geomHelper: GeomHelper) {
         val clientRect = geomHelper.toClient(rect, p)
-        val objectRadius = clientRect.run {
-            if (ctx.flipped) {
-                height / 2.0
-            } else {
-                width / 2.0
-            }
-        }
+        val objectRadius = 0.0
 
         val hint = HintConfigFactory()
             .defaultObjectRadius(objectRadius)

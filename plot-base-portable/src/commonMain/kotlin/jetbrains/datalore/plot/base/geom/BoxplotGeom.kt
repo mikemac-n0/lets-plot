@@ -48,7 +48,11 @@ class BoxplotGeom : GeomBase() {
             aesthetics, pos, coord, ctx,
             rectangleByDataPoint(ctx),
             { HintColorUtil.fromColor(it) },
-            if (ctx.flipped) TipLayoutHint.Kind.CURSOR_TOOLTIP else null
+            if (ctx.flipped) TipLayoutHint.Kind.CURSOR_TOOLTIP else null,
+            hintObjRadius = mapOf(
+                Aes.YMAX to 0.0,
+                Aes.YMIN to 0.0
+            )
         )
     }
 

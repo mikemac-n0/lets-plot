@@ -10,11 +10,11 @@ import jetbrains.datalore.base.geometry.DoubleVector
 import jetbrains.datalore.plot.base.*
 import jetbrains.datalore.plot.base.geom.util.BarTooltipHelper
 import jetbrains.datalore.plot.base.geom.util.GeomUtil
-import jetbrains.datalore.plot.base.geom.util.GeomUtil.widthPx
 import jetbrains.datalore.plot.base.geom.util.HintColorUtil
 import jetbrains.datalore.plot.base.geom.util.RectanglesHelper
 import jetbrains.datalore.plot.base.render.SvgRoot
 import jetbrains.datalore.plot.common.data.SeriesUtil
+import kotlin.math.min
 
 open class BarGeom : GeomBase() {
 
@@ -50,13 +50,17 @@ open class BarGeom : GeomBase() {
                 val w = p.width()
                 if (!SeriesUtil.allFinite(x, y, w)) {
                     null
-                } else if (isHintRect) {
-                    val width = widthPx(p, ctx, 2.0)
-                    val origin = DoubleVector(x!! - width / 2, y!!)
-                    val dimension = DoubleVector(width, 0.0)
-                    DoubleRectangle(origin, dimension)
                 } else {
-                    GeomUtil.rectangleByDataPoint(p, ctx)
+                    val rect = GeomUtil.rectangleByDataPoint(p, ctx)
+                    if (isHintRect) {
+                        // todo the highlight point - to the top corner and move inside the rect:
+                        val shift = min(6.0, rect.height / 2)
+                        val origin = DoubleVector(rect.left, rect.bottom - shift)
+                        val dimension = DoubleVector(rect.width, 0.0)
+                        DoubleRectangle(origin, dimension)
+                    } else {
+                        rect
+                    }
                 }
             }
         }

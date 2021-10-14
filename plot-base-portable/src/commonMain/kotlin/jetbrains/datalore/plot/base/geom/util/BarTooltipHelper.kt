@@ -20,14 +20,15 @@ object BarTooltipHelper {
         ctx: GeomContext,
         rectFactory: (DataPointAesthetics) -> DoubleRectangle?,
         colorFactory: (DataPointAesthetics) -> Color,
-        defaultTooltipKind: TipLayoutHint.Kind? = null
+        defaultTooltipKind: TipLayoutHint.Kind? = null,
+        hintObjRadius: Map<Aes<Double>, Double> = emptyMap()
     ) {
         val helper = GeomHelper(pos, coord, ctx)
 
         for (p in aesthetics.dataPoints()) {
             val rect = rectFactory(p) ?: continue
 
-            val objectRadius = helper.toClient(DoubleRectangle(0.0, 0.0, rect.width, 0.0), p).run {
+            val defaultObjectRadius = helper.toClient(DoubleRectangle(0.0, 0.0, rect.width, 0.0), p).run {
                 if (ctx.flipped) {
                     height / 2.0
                 } else {
@@ -36,7 +37,6 @@ object BarTooltipHelper {
             }
             val xCoord = rect.center.x
             val hintFactory = HintsCollection.HintConfigFactory()
-                .defaultObjectRadius(objectRadius)
                 .defaultX(xCoord)
                 .defaultKind(
                     if (ctx.flipped) {
@@ -48,7 +48,9 @@ object BarTooltipHelper {
 
             val hintConfigs = hintAesList
                 .fold(HintsCollection(p, helper)) { acc, aes ->
-                    acc.addHint(hintFactory.create(aes))
+                    acc.addHint(hintFactory.create(aes)
+                        .objectRadius(hintObjRadius[aes] ?: defaultObjectRadius)
+                    )
                 }
 
             ctx.targetCollector.addRectangle(
@@ -56,7 +58,6 @@ object BarTooltipHelper {
                 helper.toClient(rect, p),
                 GeomTargetCollector.TooltipParams.params()
                     .setTipLayoutHints(hintConfigs.hints)
-//                    .setColor(HintColorUtil.fromColor(p))
                     .setColor(colorFactory(p)),
                 tooltipKind = defaultTooltipKind ?: if (ctx.flipped) {
                     TipLayoutHint.Kind.VERTICAL_TOOLTIP

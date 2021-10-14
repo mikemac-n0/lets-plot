@@ -14,6 +14,7 @@ import jetbrains.datalore.base.registration.Disposable
 import jetbrains.datalore.base.values.Color
 import jetbrains.datalore.base.values.Colors
 import jetbrains.datalore.plot.base.interact.GeomTargetLocator
+import jetbrains.datalore.plot.base.interact.TipLayoutHint
 import jetbrains.datalore.plot.base.interact.TipLayoutHint.Kind.*
 import jetbrains.datalore.plot.builder.event.MouseEventPeer
 import jetbrains.datalore.plot.builder.interact.loc.LocatedTargetsPicker
@@ -98,7 +99,13 @@ internal class TooltipRenderer(
                     else -> 1.0
                 }
 
-                val tooltipBox = TooltipBox().apply {
+                val tooltipBox = TooltipBox(
+                    spec.layoutHint.kind !in listOf(
+                        X_AXIS_TOOLTIP,
+                        Y_AXIS_TOOLTIP
+                    ) && spec.anchor == null,
+                    spec.layoutHint.pointerStyle
+                ).apply {
                     rootGroup.visibility().set(HIDDEN)
                     myTooltipLayer.children().add(rootGroup)
                 }
@@ -109,7 +116,6 @@ internal class TooltipRenderer(
                     strokeWidth = strokeWidth,
                     lines = spec.lines,
                     style = spec.style,
-                    rotate = spec.layoutHint.kind == ROTATED_TOOLTIP,
                     tooltipMinWidth = spec.minWidth
                 )
 

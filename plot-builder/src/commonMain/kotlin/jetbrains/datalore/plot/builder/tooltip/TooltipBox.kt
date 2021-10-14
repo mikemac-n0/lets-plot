@@ -8,6 +8,8 @@ package jetbrains.datalore.plot.builder.tooltip
 import jetbrains.datalore.base.geometry.DoubleRectangle
 import jetbrains.datalore.base.geometry.DoubleVector
 import jetbrains.datalore.base.values.Color
+import jetbrains.datalore.base.values.Colors
+import jetbrains.datalore.plot.base.interact.TipLayoutHint
 import jetbrains.datalore.plot.base.render.svg.SvgComponent
 import jetbrains.datalore.plot.base.render.svg.TextLabel
 import jetbrains.datalore.plot.builder.interact.TooltipSpec
@@ -21,13 +23,17 @@ import jetbrains.datalore.plot.builder.presentation.Defaults.Common.Tooltip.V_CO
 import jetbrains.datalore.plot.builder.tooltip.TooltipBox.Orientation.HORIZONTAL
 import jetbrains.datalore.plot.builder.tooltip.TooltipBox.Orientation.VERTICAL
 import jetbrains.datalore.plot.builder.tooltip.TooltipBox.PointerDirection.*
+import jetbrains.datalore.vis.svg.*
 import jetbrains.datalore.vis.svg.SvgPathDataBuilder
 import jetbrains.datalore.vis.svg.SvgPathElement
 import jetbrains.datalore.vis.svg.SvgSvgElement
 import kotlin.math.max
 import kotlin.math.min
 
-class TooltipBox: SvgComponent() {
+class TooltipBox(
+    newStylePointer: Boolean = false,
+    pointerStyle: TipLayoutHint.PointerStyle? = null,
+): SvgComponent() {
     enum class Orientation {
         VERTICAL,
         HORIZONTAL
@@ -42,8 +48,16 @@ class TooltipBox: SvgComponent() {
 
     val contentRect get() = DoubleRectangle.span(DoubleVector.ZERO, myTextBox.dimension)
 
-    private val myPointerBox = PointerBox()
+    private val myPointerBox = if (newStylePointer) NewStylePointerBox() else PointerBox()
     private val myTextBox = TextBox()
+
+    //private var myRotationAngle: Double = rotationAngle ?: 0.0
+    private val myPointerStyle: TipLayoutHint.PointerStyle = pointerStyle ?: TipLayoutHint.PointerStyle()
+/*
+    private var textColor: Color = Color.BLACK
+    private var dpColor: Color = Color.BLACK
+    private var fillColor: Color = Color.WHITE
+    */
     internal val pointerDirection get() = myPointerBox.pointerDirection // for tests
 
     override fun buildComponent() {
@@ -58,7 +72,6 @@ class TooltipBox: SvgComponent() {
         strokeWidth: Double,
         lines: List<TooltipSpec.Line>,
         style: String,
-        rotate: Boolean,
         tooltipMinWidth: Double? = null
     ) {
         addClassName(style)
@@ -66,19 +79,30 @@ class TooltipBox: SvgComponent() {
             lines,
             labelTextColor = DARK_TEXT_COLOR,
             valueTextColor = textColor,
-            tooltipMinWidth,
-            rotate
+            tooltipMinWidth
         )
+        /*
+        if (isAxis) {
+            fillColor = Colors.mimicTransparency(color, color.alpha / 255.0, Color.WHITE)
+            textColor = LIGHT_TEXT_COLOR.takeIf { fillColor.isDark() } ?: DARK_TEXT_COLOR
+        } else {
+            fillColor = Color.WHITE
+            dpColor = color.takeIf { color.isDark() } ?: darker(color) ?: DARK_TEXT_COLOR
+            textColor = Color.BLACK
+        }        
+        */
         myPointerBox.updateStyle(fillColor, borderColor, strokeWidth)
     }
 
     internal fun setPosition(tooltipCoord: DoubleVector, pointerCoord: DoubleVector, orientation: Orientation) {
         myPointerBox.update(pointerCoord.subtract(tooltipCoord), orientation)
-        moveTo(tooltipCoord.x, tooltipCoord.y)
+        moveTo(tooltipCoord)
     }
 
-    private inner class PointerBox : SvgComponent() {
-        private val myPointerPath = SvgPathElement()
+    private fun Color.isDark() = Colors.luminance(this) < 0.5
+
+    open inner class PointerBox : SvgComponent() {
+        internal val myPointerPath = SvgPathElement()
         internal var pointerDirection: PointerDirection? = null
 
         override fun buildComponent() {
@@ -93,7 +117,7 @@ class TooltipBox: SvgComponent() {
             }
         }
 
-        internal fun update(pointerCoord: DoubleVector, orientation: Orientation) {
+        protected fun calcPointerDirection(pointerCoord: DoubleVector, orientation: Orientation) {
             pointerDirection = when (orientation) {
                 HORIZONTAL -> when {
                     pointerCoord.x < contentRect.left -> LEFT
@@ -106,6 +130,16 @@ class TooltipBox: SvgComponent() {
                     else -> null
                 }
             }
+        }
+
+        internal open fun update(pointerCoord: DoubleVector, orientation: Orientation) {
+            calcPointerDirection(pointerCoord, orientation)
+/*
+            myPointerPath.apply {
+                strokeColor().set(dpColor)
+                strokeOpacity().set(1.0)
+                fillColor().set(fillColor)
+            }*/
 
             val vertFootingIndent = -calculatePointerFootingIndent(contentRect.height)
             val horFootingIndent = calculatePointerFootingIndent(contentRect.width)
@@ -153,6 +187,99 @@ class TooltipBox: SvgComponent() {
         }
     }
 
+    private inner class NewStylePointerBox : PointerBox() {
+
+        override fun update(pointerCoord: DoubleVector, orientation: Orientation) {
+            calcPointerDirection(pointerCoord, orientation)
+
+            // tooltip rectangle (todo add shadows)
+            myPointerPath.apply {
+                strokeColor().set(Color.BLACK)
+                strokeOpacity().set(1.0)
+                fillColor().set(Color.WHITE)
+                d().set(
+                    SvgPathDataBuilder().apply {
+                        with(contentRect) {
+                            moveTo(left, bottom)
+                            lineTo(right, bottom)
+                            lineTo(right, top)
+                            lineTo(left, top)
+                            lineTo(left, bottom)
+                        }
+                    }.build()
+                )
+            }
+
+            // path to the highlight point
+
+            val pointerBorder = if (myPointerStyle.fillColor != null) {
+                 pointerCoord
+            } else {
+                when (pointerDirection) {
+                    LEFT -> pointerCoord.subtract(DoubleVector(myPointerStyle.size, 0.0))
+                    RIGHT -> pointerCoord.add(DoubleVector(myPointerStyle.size, 0.0))
+                    UP -> pointerCoord.add(DoubleVector(0.0, myPointerStyle.size))
+                    DOWN -> pointerCoord.subtract(DoubleVector(0.0, myPointerStyle.size))
+                    null -> pointerCoord
+                }
+            }
+
+            //  start pointer from a middle of a box, not from a corner, increase length of the pointer.
+            val fromRectPoint = when (pointerDirection) {
+                LEFT -> DoubleVector(contentRect.left, contentRect.center.y)
+                RIGHT -> DoubleVector(contentRect.right, contentRect.center.y)
+                UP -> DoubleVector(contentRect.center.x, contentRect.top)
+                DOWN -> DoubleVector(contentRect.center.x, contentRect.bottom)
+                null -> TODO()
+            }
+            val SHIFT = 16.0
+            val middlePoint = when (pointerDirection) {
+                LEFT -> fromRectPoint.subtract(DoubleVector(SHIFT, 0.0))
+                RIGHT -> fromRectPoint.add(DoubleVector(SHIFT, 0.0))
+                UP -> fromRectPoint.subtract(DoubleVector(0.0, SHIFT))
+                DOWN -> fromRectPoint.add(DoubleVector(0.0, SHIFT))
+                null -> TODO()
+            }
+
+            val svgPathData = SvgPathDataBuilder().apply {
+                moveTo(fromRectPoint)
+                lineTo(middlePoint)
+                /// from horizontal/vertical
+                moveTo(middlePoint)
+                lineTo(pointerBorder)
+            }.build()
+
+            // todo white parallel line
+            val whitePathToPoint = SvgPathElement().apply {
+                strokeColor().set(Color.WHITE)
+                strokeOpacity().set(1.0)
+                strokeWidth().set(1.8)
+                fillColor().set(Color.WHITE)
+                d().set(svgPathData)
+            }
+            add(whitePathToPoint)
+
+            val pathToPoint = SvgPathElement().apply {
+                strokeColor().set(Color.BLACK)
+                strokeOpacity().set(1.0)
+                fillColor().set(Color.BLACK)
+                d().set(svgPathData)
+            }
+            add(pathToPoint)
+
+            // highlight point
+            val highlightPoint = SvgCircleElement(pointerCoord, myPointerStyle.size)
+            if (myPointerStyle.fillColor != null) {
+                highlightPoint.fillColor().set(myPointerStyle.fillColor)
+            } else {
+                highlightPoint.fillOpacity().set(0.0)
+                highlightPoint.strokeWidth().set(2.0)
+            }
+            highlightPoint.strokeColor().set(myPointerStyle.strokeColor)
+            add(highlightPoint)
+        }
+    }
+
     private inner class TextBox : SvgComponent() {
         private val myLines = SvgSvgElement().apply {
             x().set(0.0)
@@ -178,8 +305,7 @@ class TooltipBox: SvgComponent() {
             lines: List<TooltipSpec.Line>,
             labelTextColor: Color,
             valueTextColor: Color,
-            tooltipMinWidth: Double?,
-            rotate: Boolean
+            tooltipMinWidth: Double?
         ) {
             val linesInfo: List<Triple<String?, TextLabel?, TextLabel>> = lines.map { line ->
                 Triple(
@@ -265,28 +391,13 @@ class TooltipBox: SvgComponent() {
                             labelBBox.height + labelBBox.top
                         ) + LINE_INTERVAL
                     )
-                }.let { textSize ->
-                    if (rotate) {
-                        linesInfo
-                            .onEach { (_, labelComponent, valueComponent) ->
-                                labelComponent?.rotate(90.0)
-                                labelComponent?.y()?.set(-labelComponent.y().get()!!)
-                                labelComponent?.setVerticalAnchor(TextLabel.VerticalAnchor.CENTER)
-
-                                valueComponent.y().set(-valueComponent.y().get()!!)
-                                valueComponent.setVerticalAnchor(TextLabel.VerticalAnchor.CENTER)
-                                valueComponent.rotate(90.0)
-                            }
-                        textSize.flip()
-                    } else {
-                        textSize.subtract(DoubleVector(0.0, LINE_INTERVAL)) // remove LINE_INTERVAL from last line
-                    }
-                }
+                })
+                .subtract(DoubleVector(0.0, LINE_INTERVAL)) // remove LINE_INTERVAL from last line
 
             myLines.apply {
-                x().set(if (rotate) 0.0 else H_CONTENT_PADDING)
+                x().set(H_CONTENT_PADDING)
                 y().set(V_CONTENT_PADDING)
-                width().set(textSize.x + H_CONTENT_PADDING * 2)
+                width().set(textSize.x)
                 height().set(textSize.y)
             }
 
