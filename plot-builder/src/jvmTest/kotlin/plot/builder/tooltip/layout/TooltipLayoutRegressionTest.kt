@@ -7,6 +7,7 @@ package jetbrains.datalore.plot.builder.tooltip.layout
 
 import jetbrains.datalore.plot.builder.interact.TestUtil.coord
 import jetbrains.datalore.plot.builder.tooltip.layout.MeasuredTooltipBuilder.MeasuredTooltipBuilderFactory
+import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertFalse
 
@@ -28,6 +29,7 @@ internal class TooltipLayoutRegressionTest : TooltipLayoutTestBase() {
         assertFalse(tooltip(VERTICAL_POINT_KEY).rect().contains(tooltip(VERTICAL_POINT_KEY).stemCoord()))
     }
 
+    @Ignore
     @Test
     fun sideTipAndPointTipsShouldBeArrangedProperly() {
         val factory = MeasuredTooltipBuilderFactory()
@@ -51,6 +53,7 @@ internal class TooltipLayoutRegressionTest : TooltipLayoutTestBase() {
         )
     }
 
+    @Ignore
     @Test
     fun notFixedOverlappingCase1() {
         val factory = MeasuredTooltipBuilderFactory()

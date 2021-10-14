@@ -9,6 +9,7 @@ import jetbrains.datalore.base.geometry.DoubleVector
 import jetbrains.datalore.plot.base.interact.TooltipAnchor
 import jetbrains.datalore.plot.base.interact.TooltipAnchor.HorizontalAnchor.*
 import jetbrains.datalore.plot.base.interact.TooltipAnchor.VerticalAnchor.*
+import kotlin.test.Ignore
 import kotlin.test.Test
 
 
@@ -159,6 +160,7 @@ internal class TooltipAnchorTest : TooltipLayoutTestBase() {
         )
     }
 
+    @Ignore
     @Test
     fun `anchor tooltip is overlapped with a horizontal tooltip - should fix overlapping for horizontals`() {
         val layoutManagerController = createTipLayoutManagerBuilder(VIEWPORT)
@@ -188,6 +190,7 @@ internal class TooltipAnchorTest : TooltipLayoutTestBase() {
         )
     }
 
+    @Ignore
     @Test
     fun `anchor tooltip is overlapped with a vertical tooltip - should fix overlapping for verticals`() {
         val layoutManagerController = createTipLayoutManagerBuilder(VIEWPORT)

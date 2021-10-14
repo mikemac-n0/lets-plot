@@ -8,10 +8,12 @@ package jetbrains.datalore.plot.builder.tooltip.layout
 import jetbrains.datalore.plot.builder.interact.TestUtil.coord
 import jetbrains.datalore.plot.builder.interact.TestUtil.size
 import jetbrains.datalore.plot.builder.tooltip.layout.MeasuredTooltipBuilder.MeasuredTooltipBuilderFactory
+import kotlin.test.Ignore
 import kotlin.test.Test
 
 internal class UnderCursorTooltipLayoutTest : TooltipLayoutTestBase() {
 
+    @Ignore
     @Test
     fun underCursorShouldStayAtDesiredCoord_AroundPointMovedOut() {
         val size = size(100.0, 100.0)

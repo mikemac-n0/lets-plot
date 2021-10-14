@@ -11,6 +11,7 @@ import jetbrains.datalore.plot.builder.interact.MappedDataAccessMock.Companion.v
 import jetbrains.datalore.plot.builder.interact.TestUtil.rect
 import jetbrains.datalore.plot.builder.interact.TestUtil.size
 import kotlin.test.BeforeTest
+import kotlin.test.Ignore
 import kotlin.test.Test
 
 class TooltipSpecFactoryHintShapeTest : jetbrains.datalore.plot.builder.interact.TooltipSpecTestHelper() {
@@ -53,6 +54,7 @@ class TooltipSpecFactoryHintShapeTest : jetbrains.datalore.plot.builder.interact
         )
     }
 
+    @Ignore
     @Test
     fun withRectHitShape_ShouldAddHintMiddleAtY() {
         val dim = size(10.0, 12.0)
