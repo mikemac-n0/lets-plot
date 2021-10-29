@@ -14,7 +14,6 @@ import jetbrains.datalore.base.registration.Disposable
 import jetbrains.datalore.base.values.Color
 import jetbrains.datalore.base.values.Colors
 import jetbrains.datalore.plot.base.interact.GeomTargetLocator
-import jetbrains.datalore.plot.base.interact.TipLayoutHint
 import jetbrains.datalore.plot.base.interact.TipLayoutHint.Kind.*
 import jetbrains.datalore.plot.builder.event.MouseEventPeer
 import jetbrains.datalore.plot.builder.interact.loc.LocatedTargetsPicker
@@ -76,15 +75,16 @@ internal class TooltipRenderer(
                 val fillColor = when {
                     spec.layoutHint.kind == X_AXIS_TOOLTIP -> xAxisTheme.tooltipFill()
                     spec.layoutHint.kind == Y_AXIS_TOOLTIP -> yAxisTheme.tooltipFill()
-                    spec.isOutlier -> Colors.mimicTransparency(spec.fill, spec.fill.alpha / 255.0, Color.WHITE)
+                    //spec.isOutlier -> Colors.mimicTransparency(spec.fill, spec.fill.alpha / 255.0, Color.WHITE)
                     else -> Color.WHITE
                 }
 
                 val textColor = when {
                     spec.layoutHint.kind == X_AXIS_TOOLTIP -> xAxisTheme.tooltipTextColor()
                     spec.layoutHint.kind == Y_AXIS_TOOLTIP -> yAxisTheme.tooltipTextColor()
-                    spec.isOutlier -> LIGHT_TEXT_COLOR.takeIf { fillColor.isReadableOnWhite() } ?: DARK_TEXT_COLOR
-                    else -> spec.fill.takeIf { it.isReadableOnWhite() } ?: Colors.darker(spec.fill)!!
+                    //spec.isOutlier -> LIGHT_TEXT_COLOR.takeIf { fillColor.isReadableOnWhite() } ?: DARK_TEXT_COLOR
+                    spec.anchor != null -> spec.fill.takeIf { it.isReadableOnWhite() } ?: Colors.darker(spec.fill)!!
+                    else -> Color.BLACK
                 }
 
                 val borderColor = when {
@@ -99,13 +99,12 @@ internal class TooltipRenderer(
                     else -> 1.0
                 }
 
-                val tooltipBox = TooltipBox(
-                    spec.layoutHint.kind !in listOf(
-                        X_AXIS_TOOLTIP,
-                        Y_AXIS_TOOLTIP
-                    ) && spec.anchor == null,
-                    spec.layoutHint.pointerStyle
-                ).apply {
+                val newTooltipStyle = spec.layoutHint.kind !in listOf(
+                    X_AXIS_TOOLTIP,
+                    Y_AXIS_TOOLTIP
+                ) && spec.anchor == null
+
+                val tooltipBox = TooltipBox(newTooltipStyle).apply {
                     rootGroup.visibility().set(HIDDEN)
                     myTooltipLayer.children().add(rootGroup)
                 }
@@ -116,7 +115,8 @@ internal class TooltipRenderer(
                     strokeWidth = strokeWidth,
                     lines = spec.lines,
                     style = spec.style,
-                    tooltipMinWidth = spec.minWidth
+                    tooltipMinWidth = spec.minWidth,
+                    pointerStyle = spec.layoutHint.pointerStyle
                 )
 
                 MeasuredTooltip(tooltipSpec = spec, tooltipBox = tooltipBox)
