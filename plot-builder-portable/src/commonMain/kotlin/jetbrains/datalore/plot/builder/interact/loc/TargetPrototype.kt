@@ -60,8 +60,8 @@ class TargetPrototype(
                     )
                     HORIZONTAL_TOOLTIP -> TipLayoutHint.horizontalTooltip(
                         hitCoord,
-                        /// todo move tooltip inside the tooltip box
-                        hitShape.rect.width / 2 - min(4.0,  hitShape.rect.width / 2),
+                        // todo the highlight point - move tooltip inside the tooltip box
+                        hitShape.rect.width / 2 - min(4.0, hitShape.rect.width / 2),
                         fill,
                         stemLength
                     )

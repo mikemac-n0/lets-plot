@@ -48,7 +48,7 @@ interface GeomTargetCollector {
 
         private var myTipLayoutHints = emptyMap<Aes<*>, TipLayoutHint>()
         private var myColor = Color.GRAY
-        private var myStemLength = TipLayoutHint.StemLength.NORMAL
+        private var myStemLength = TipLayoutHint.StemLength.LONG
         private var myPointerStyle = TipLayoutHint.PointerStyle()
 
         fun getTipLayoutHints(): Map<Aes<*>, TipLayoutHint> {

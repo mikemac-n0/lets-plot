@@ -8,7 +8,6 @@ package jetbrains.datalore.plot.builder.tooltip
 import jetbrains.datalore.base.geometry.DoubleRectangle
 import jetbrains.datalore.base.geometry.DoubleVector
 import jetbrains.datalore.base.values.Color
-import jetbrains.datalore.base.values.Colors
 import jetbrains.datalore.plot.base.interact.TipLayoutHint
 import jetbrains.datalore.plot.base.render.svg.SvgComponent
 import jetbrains.datalore.plot.base.render.svg.TextLabel
@@ -77,8 +76,13 @@ class TooltipBox(
         myPointerBox.updateStyle(fillColor, borderColor, strokeWidth, pointerStyle)
     }
 
-    internal fun setPosition(tooltipCoord: DoubleVector, pointerCoord: DoubleVector, orientation: Orientation) {
-        myPointerBox.update(pointerCoord.subtract(tooltipCoord), orientation)
+    internal fun setPosition(
+        tooltipCoord: DoubleVector,
+        pointerCoord: DoubleVector,
+        orientation: Orientation,
+        stemLength: TipLayoutHint.StemLength
+    ) {
+        myPointerBox.update(pointerCoord.subtract(tooltipCoord), orientation, stemLength.value)
         moveTo(tooltipCoord)
     }
 
@@ -117,7 +121,7 @@ class TooltipBox(
             }
         }
 
-        internal open fun update(pointerCoord: DoubleVector, orientation: Orientation) {
+        internal open fun update(pointerCoord: DoubleVector, orientation: Orientation, stemLen: Double) {
             calcPointerDirection(pointerCoord, orientation)
 
             val vertFootingIndent = -calculatePointerFootingIndent(contentRect.height)
@@ -168,6 +172,8 @@ class TooltipBox(
 
     private inner class NewStylePointerBox : PointerBox() {
         private var myPointerStyle: TipLayoutHint.PointerStyle = TipLayoutHint.PointerStyle()
+        val borderSize = 1.0
+        val whiteBackLineSize = 3.0
 
         override fun updatePointerStyle(pointerStyle: TipLayoutHint.PointerStyle?) {
             if (pointerStyle != null) {
@@ -175,7 +181,7 @@ class TooltipBox(
             }
         }
 
-        override fun update(pointerCoord: DoubleVector, orientation: Orientation) {
+        override fun update(pointerCoord: DoubleVector, orientation: Orientation, stemLen: Double) {
             calcPointerDirection(pointerCoord, orientation)
 
             // tooltip rectangle (todo add shadows)
@@ -195,7 +201,7 @@ class TooltipBox(
 
             // path to the highlight point
 
-            val pointerBorder = if (myPointerStyle.fillColor != null) {
+            val pointBorder = if (!myPointerStyle.isTransparent()) {
                  pointerCoord
             } else {
                 when (pointerDirection) {
@@ -215,12 +221,12 @@ class TooltipBox(
                 DOWN -> DoubleVector(contentRect.center.x, contentRect.bottom)
                 null -> TODO()
             }
-            val SHIFT = 16.0
+            val lineLen = stemLen / 1.5
             val middlePoint = when (pointerDirection) {
-                LEFT -> fromRectPoint.subtract(DoubleVector(SHIFT, 0.0))
-                RIGHT -> fromRectPoint.add(DoubleVector(SHIFT, 0.0))
-                UP -> fromRectPoint.subtract(DoubleVector(0.0, SHIFT))
-                DOWN -> fromRectPoint.add(DoubleVector(0.0, SHIFT))
+                LEFT -> fromRectPoint.subtract(DoubleVector(lineLen, 0.0))
+                RIGHT -> fromRectPoint.add(DoubleVector(lineLen, 0.0))
+                UP -> fromRectPoint.subtract(DoubleVector(0.0, lineLen))
+                DOWN -> fromRectPoint.add(DoubleVector(0.0, lineLen))
                 null -> TODO()
             }
 
@@ -229,14 +235,14 @@ class TooltipBox(
                 lineTo(middlePoint)
                 /// from horizontal/vertical
                 moveTo(middlePoint)
-                lineTo(pointerBorder)
+                lineTo(pointBorder)
             }.build()
 
             // white path to point
             SvgPathElement().apply {
                 add(this)
                 strokeColor().set(Color.WHITE)
-                strokeWidth().set(1.8)
+                strokeWidth().set(whiteBackLineSize)
                 d().set(svgPathData)
             }
 
@@ -244,18 +250,27 @@ class TooltipBox(
             SvgPathElement().apply {
                 add(this)
                 strokeColor().set(Color.BLACK)
-                strokeWidth().set(1.0)
+                strokeWidth().set(borderSize)
                 d().set(svgPathData)
             }
 
+            // white border for highlight point
+            if (myPointerStyle.isTransparent()) {
+                SvgCircleElement(pointerCoord, myPointerStyle.size).apply {
+                    add(this)
+                    fillOpacity().set(0.0)
+                    strokeWidth().set(whiteBackLineSize)
+                    strokeColor().set(Color.WHITE)
+                }
+            }
             // highlight point
             SvgCircleElement(pointerCoord, myPointerStyle.size).apply {
                 add(this)
-                if (myPointerStyle.fillColor != null) {
-                    fillColor().set(myPointerStyle.fillColor)
-                } else {
+                if (myPointerStyle.isTransparent()) {
                     fillOpacity().set(0.0)
-                    strokeWidth().set(2.0)
+                    strokeWidth().set(borderSize)
+                } else {
+                    fillColor().set(myPointerStyle.fillColor)
                 }
                 strokeColor().set(myPointerStyle.strokeColor)
             }

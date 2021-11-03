@@ -12,8 +12,10 @@ import jetbrains.datalore.plot.builder.interact.TestUtil.size
 import jetbrains.datalore.plot.builder.tooltip.layout.LayoutManager.HorizontalAlignment.LEFT
 import jetbrains.datalore.plot.builder.tooltip.layout.LayoutManager.HorizontalAlignment.RIGHT
 import jetbrains.datalore.plot.builder.tooltip.layout.MeasuredTooltipBuilder.MeasuredTooltipBuilderFactory
+import kotlin.test.Ignore
 import kotlin.test.Test
 
+@Ignore
 internal class HorizontalTooltipLayoutTest : TooltipLayoutTestBase() {
 
     @Test

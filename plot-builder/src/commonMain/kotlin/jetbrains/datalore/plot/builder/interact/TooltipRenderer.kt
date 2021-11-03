@@ -18,8 +18,6 @@ import jetbrains.datalore.plot.base.interact.TipLayoutHint.Kind.*
 import jetbrains.datalore.plot.builder.event.MouseEventPeer
 import jetbrains.datalore.plot.builder.interact.loc.LocatedTargetsPicker
 import jetbrains.datalore.plot.builder.interact.loc.TransformedTargetLocator
-import jetbrains.datalore.plot.builder.presentation.Defaults.Common.Tooltip.DARK_TEXT_COLOR
-import jetbrains.datalore.plot.builder.presentation.Defaults.Common.Tooltip.LIGHT_TEXT_COLOR
 import jetbrains.datalore.plot.builder.presentation.Style
 import jetbrains.datalore.plot.builder.theme.AxisTheme
 import jetbrains.datalore.plot.builder.tooltip.CrosshairComponent
@@ -128,7 +126,8 @@ internal class TooltipRenderer(
                     setPosition(
                         arranged.tooltipCoord,
                         arranged.stemCoord,
-                        arranged.orientation
+                        arranged.orientation,
+                        arranged.tooltipSpec.layoutHint.stemLength
                     )
                     rootGroup.visibility().set(VISIBLE)
                 }

@@ -19,7 +19,8 @@ open class TipLayoutHint(
 ) {
 
     enum class StemLength(val value: Double) {
-        NORMAL(8.0 + 16.0),
+        LONG(32.0),
+        NORMAL(8.0),
         SHORT(5.0),
         NONE(0.0)
     }
@@ -28,7 +29,9 @@ open class TipLayoutHint(
         val fillColor: Color? = Color.BLACK,
         val strokeColor: Color = Color.WHITE,
         val size: Double = 2.0
-    )
+    ) {
+        fun isTransparent() = fillColor == null
+    }
 
     override fun toString(): String {
         return "$kind"

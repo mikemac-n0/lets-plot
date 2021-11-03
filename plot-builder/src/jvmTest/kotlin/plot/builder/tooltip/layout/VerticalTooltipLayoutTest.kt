@@ -10,6 +10,7 @@ import jetbrains.datalore.plot.builder.interact.TestUtil.size
 import jetbrains.datalore.plot.builder.tooltip.layout.LayoutManager.VerticalAlignment.BOTTOM
 import jetbrains.datalore.plot.builder.tooltip.layout.LayoutManager.VerticalAlignment.TOP
 import jetbrains.datalore.plot.builder.tooltip.layout.MeasuredTooltipBuilder.MeasuredTooltipBuilderFactory
+import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertFalse
 
@@ -31,6 +32,7 @@ internal class VerticalTooltipLayoutTest : TooltipLayoutTestBase() {
         assertFalse(tooltip(HORIZONTAL_TIP_KEY).rect().intersects(tooltip(VERTICAL_TIP_KEY).rect()))
     }
 
+    @Ignore
     @Test
     fun verticalWithRadius_ShouldOffsetTooltipForRadiusValue() {
         val factory = MeasuredTooltipBuilderFactory()

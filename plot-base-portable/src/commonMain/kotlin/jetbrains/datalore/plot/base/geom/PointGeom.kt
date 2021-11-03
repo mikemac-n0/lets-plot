@@ -58,15 +58,14 @@ open class PointGeom : GeomBase() {
                 val location = helper.toClient(DoubleVector(x!!, y!!), p)
 
                 val shape = p.shape()!!
-                val radius = sizeUnitRatio * shape.size(p) / 2
                 targetCollector.addPoint(
-                    i, location, radius,
+                    i, location, radius = 0.0,
                     tooltipParams(p)
                         .setPointerStyle(
                             TipLayoutHint.PointerStyle(
                                 fillColor = null,   // no fill
                                 strokeColor = Color.BLACK,
-                                size = radius + 2.0 // increase radius
+                                size = sizeUnitRatio * shape.size(p) / 2 + 4.0 // increase radius
                             )
                         )
                 )

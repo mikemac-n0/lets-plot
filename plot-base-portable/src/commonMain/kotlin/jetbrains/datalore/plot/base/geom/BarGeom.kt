@@ -54,7 +54,7 @@ open class BarGeom : GeomBase() {
                     val rect = GeomUtil.rectangleByDataPoint(p, ctx)
                     if (isHintRect) {
                         // todo the highlight point - to the top corner and move inside the rect:
-                        val shift = min(6.0, rect.height / 2)
+                        val shift = min(4.0, rect.width / 2)
                         val origin = DoubleVector(rect.left, rect.bottom - shift)
                         val dimension = DoubleVector(rect.width, 0.0)
                         DoubleRectangle(origin, dimension)

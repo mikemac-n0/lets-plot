@@ -301,13 +301,18 @@ class LayoutManager(
         alignment: VerticalAlignment,
         ignoreCursor: Boolean
     ): PositionedTooltip {
-        val tooltipX = centerInsideRange(measuredTooltip.hintCoord.x, measuredTooltip.size.x, myHorizontalSpace)
+        val tooltipX = centerInsideRange(
+            measuredTooltip.hintCoord.x - measuredTooltip.stemLength / 2,
+            measuredTooltip.size.x,
+            myHorizontalSpace
+        )
 
         val stemY: Double
         val tooltipY: Double
         run {
             val targetCoordY = measuredTooltip.hintCoord.y
-            val stemLength = measuredTooltip.stemLength
+            val pointerSize = measuredTooltip.tooltipSpec.layoutHint.pointerStyle?.size ?: 0.0
+            val stemLength = measuredTooltip.stemLength + pointerSize
             val targetTopPoint = targetCoordY - measuredTooltip.hintRadius
             val targetBottomPoint = targetCoordY + measuredTooltip.hintRadius
 
@@ -329,9 +334,6 @@ class LayoutManager(
             else
                 EMPTY_DOUBLE_RANGE
 
-            //todo !!! tmp decision but need to use targetCoordY for stemY for geom_point
-            val tmp = (measuredTooltip.tooltipSpec.layoutHint.pointerStyle?.size != null)
-
             if (myVerticalAlignmentResolver.resolve(
                     topTooltipRange,
                     bottomTooltipRange,
@@ -340,10 +342,10 @@ class LayoutManager(
                 ) === TOP
             ) {
                 tooltipY = topTooltipRange.start()
-                stemY = if (!tmp) targetTopPoint else targetCoordY
+                stemY = targetTopPoint
             } else {
                 tooltipY = bottomTooltipRange.start()
-                stemY = if (!tmp) targetBottomPoint else targetCoordY
+                stemY = targetBottomPoint
             }
         }
 
@@ -358,7 +360,11 @@ class LayoutManager(
         measuredTooltip: MeasuredTooltip,
         restrictions: List<DoubleRectangle> = emptyList()
     ): PositionedTooltip {
-        val tooltipY = centerInsideRange(measuredTooltip.hintCoord.y, measuredTooltip.size.y, myVerticalSpace)
+        val tooltipY = centerInsideRange(
+            measuredTooltip.hintCoord.y,
+            measuredTooltip.size.y,
+            myVerticalSpace
+        ) - measuredTooltip.stemLength  / 2
 
         val tooltipX: Double
         val stemX: Double

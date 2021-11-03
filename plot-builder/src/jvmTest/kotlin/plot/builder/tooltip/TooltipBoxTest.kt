@@ -10,6 +10,7 @@ import jetbrains.datalore.base.geometry.DoubleVector
 import jetbrains.datalore.base.geometry.DoubleVector.Companion.ZERO
 import jetbrains.datalore.base.unsupported.UNSUPPORTED
 import jetbrains.datalore.base.values.Color
+import jetbrains.datalore.plot.base.interact.TipLayoutHint
 import jetbrains.datalore.plot.builder.interact.TooltipSpec
 import jetbrains.datalore.plot.builder.tooltip.TooltipBox.Orientation.HORIZONTAL
 import jetbrains.datalore.plot.builder.tooltip.TooltipBox.Orientation.VERTICAL
@@ -53,17 +54,22 @@ class TooltipBoxTest {
     @Test
     fun nullDirectionCases() {
         tooltipBox.apply {
-            setPosition(ZERO, wordSize.mul(0.5), HORIZONTAL)
+            setPosition(ZERO, wordSize.mul(0.5), HORIZONTAL, TipLayoutHint.StemLength.NORMAL)
             assertNull(pointerDirection, "Pointer inside tooltip - direction should be null")
         }
 
         tooltipBox.apply {
-            setPosition(ZERO, p(wordSize.x / 2.0, wordSize.y + 100.0), HORIZONTAL)
+            setPosition(
+                ZERO,
+                p(wordSize.x / 2.0, wordSize.y + 100.0),
+                HORIZONTAL,
+                TipLayoutHint.StemLength.NORMAL
+            )
             assertNull(pointerDirection, "Pointer x coord within tooltips x range - direction should be null")
         }
 
         tooltipBox.apply {
-            setPosition(ZERO, p(wordSize.x + 100.0, 4.0), VERTICAL)
+            setPosition(ZERO, p(wordSize.x + 100.0, 4.0), VERTICAL, TipLayoutHint.StemLength.NORMAL)
             assertNull(pointerDirection, "Pointer y coord within tooltips y range - direction should be null")
         }
     }
@@ -71,7 +77,7 @@ class TooltipBoxTest {
     @Test
     fun verticalDirectionCases() {
         tooltipBox.apply {
-            setPosition(ZERO, wordSize.add(p(0.0, 10.0)), VERTICAL)
+            setPosition(ZERO, wordSize.add(p(0.0, 10.0)), VERTICAL, TipLayoutHint.StemLength.NORMAL)
             assertEquals(
                 pointerDirection,
                 TooltipBox.PointerDirection.DOWN,
@@ -80,7 +86,7 @@ class TooltipBoxTest {
         }
 
         tooltipBox.apply {
-            setPosition(ZERO, p(0.0, -10.0), VERTICAL)
+            setPosition(ZERO, p(0.0, -10.0), VERTICAL, TipLayoutHint.StemLength.NORMAL)
             assertEquals(
                 pointerDirection,
                 TooltipBox.PointerDirection.UP,
@@ -92,7 +98,7 @@ class TooltipBoxTest {
     @Test
     fun horizontalDirectionCases() {
         tooltipBox.apply {
-            setPosition(ZERO, wordSize.add(p(10.0, 0.0)), HORIZONTAL)
+            setPosition(ZERO, wordSize.add(p(10.0, 0.0)), HORIZONTAL, TipLayoutHint.StemLength.NORMAL)
             assertEquals(
                 pointerDirection,
                 TooltipBox.PointerDirection.RIGHT,
@@ -101,7 +107,7 @@ class TooltipBoxTest {
         }
 
         tooltipBox.apply {
-            setPosition(ZERO, p(-10.0, 0.0), HORIZONTAL)
+            setPosition(ZERO, p(-10.0, 0.0), HORIZONTAL, TipLayoutHint.StemLength.NORMAL)
             assertEquals(
                 pointerDirection,
                 TooltipBox.PointerDirection.LEFT,
