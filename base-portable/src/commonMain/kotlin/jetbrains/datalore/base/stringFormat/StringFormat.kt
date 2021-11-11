@@ -14,7 +14,7 @@ import jetbrains.datalore.base.stringFormat.StringFormat.FormatType.*
 
 class StringFormat private constructor(
     private val pattern: String,
-    val formatType: FormatType
+    private val formatType: FormatType
 ) {
     enum class FormatType {
         NUMBER_FORMAT,
@@ -22,7 +22,8 @@ class StringFormat private constructor(
         STRING_FORMAT
     }
 
-    private val myFormatters: List<((Any) -> String)>
+    private val myFormatters: List<((Any) -> String)?>
+    private var myDefaultFormatter: ((Any) -> String) = Any::toString
 
     init {
         myFormatters = when (formatType) {
@@ -44,11 +45,16 @@ class StringFormat private constructor(
 
     val argsNumber = myFormatters.size
 
+    fun withDefaultFormatter(formatter: ((Any) -> String)): StringFormat {
+        myDefaultFormatter = formatter
+        return this
+    }
+
     fun format(value: Any): String = format(listOf(value))
 
     fun format(values: List<Any>): String {
         if (argsNumber != values.size) {
-            error("Can't format values $values with pattern '$pattern'). Wrong number of arguments: expected $argsNumber instead of ${values.size}")
+            error("Can't format values $values with pattern '$pattern'. Wrong number of arguments: expected $argsNumber instead of ${values.size}")
         }
         return when (formatType) {
             NUMBER_FORMAT, DATETIME_FORMAT -> {
@@ -68,9 +74,9 @@ class StringFormat private constructor(
         }
     }
 
-    private fun initFormatter(formatPattern: String, formatType: FormatType): ((Any) -> String) {
+    private fun initFormatter(formatPattern: String, formatType: FormatType): ((Any) -> String)? {
         if (formatPattern.isEmpty()) {
-            return Any::toString
+            return null
         }
         when (formatType) {
             NUMBER_FORMAT -> {
@@ -103,7 +109,7 @@ class StringFormat private constructor(
 
     private fun formatValue(value: Any, formatter: ((Any) -> String)?): String {
         return when (formatter) {
-            null -> value.toString()
+            null -> myDefaultFormatter(value)
             else -> formatter(value)
         }
     }
@@ -120,6 +126,10 @@ class StringFormat private constructor(
         const val TEXT_IN_BRACES = 2
 
         fun valueInLinePattern() = "{}"
+
+        fun asStringFormatter() : StringFormat {
+            return create(pattern = valueInLinePattern(), type = STRING_FORMAT)
+        }
 
         fun forOneArg(
             pattern: String,

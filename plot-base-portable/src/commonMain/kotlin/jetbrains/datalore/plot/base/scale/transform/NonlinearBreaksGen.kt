@@ -6,8 +6,10 @@
 package jetbrains.datalore.plot.base.scale.transform
 
 import jetbrains.datalore.base.gcommon.collect.ClosedRange
+import jetbrains.datalore.base.stringFormat.StringFormat
 import jetbrains.datalore.plot.base.ContinuousTransform
 import jetbrains.datalore.plot.base.scale.BreaksGenerator
+import jetbrains.datalore.plot.base.scale.BreaksGenerator.Companion.getLabelFormatter
 import jetbrains.datalore.plot.base.scale.MapperUtil
 import jetbrains.datalore.plot.base.scale.ScaleBreaks
 import jetbrains.datalore.plot.base.scale.breaks.NumericBreakFormatter
@@ -16,23 +18,32 @@ import kotlin.math.min
 
 internal class NonlinearBreaksGen(
     private val transform: ContinuousTransform,
-    private val formatter: ((Any) -> String)? = null
+    private val formatter: StringFormat? = null
 ) : BreaksGenerator {
 
     override fun generateBreaks(domain: ClosedRange<Double>, targetCount: Int): ScaleBreaks {
         val breakValues = generateBreakValues(domain, targetCount, transform)
-        val breakFormatters = if (formatter != null) {
-            List(breakValues.size) { formatter }
+        val labelFormatter: ((Any) -> String)? = if (formatter != null) {
+            formatter::format
+        } else {
+            null
+        }
+        val breakFormatters = if (labelFormatter != null) {
+            List(breakValues.size) { labelFormatter }
         } else {
             createFormatters(breakValues)
         }
 
-        val labels = breakValues.mapIndexed() { i, v -> breakFormatters[i](v) }
+        val labels = breakValues.mapIndexed { i, v -> breakFormatters[i](v) }
         return ScaleBreaks(breakValues, breakValues, labels)
     }
 
     override fun labelFormatter(domain: ClosedRange<Double>, targetCount: Int): (Any) -> String {
-        return formatter ?: createMultiFormatter(generateBreakValues(domain, targetCount, transform))
+        return getLabelFormatter(formatter, defaultFormatter(domain, targetCount))
+    }
+
+    override fun defaultFormatter(domain: ClosedRange<Double>, targetCount: Int): (Any) -> String {
+        return createMultiFormatter(generateBreakValues(domain, targetCount, transform))
     }
 
     companion object {

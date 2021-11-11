@@ -6,6 +6,7 @@
 package jetbrains.datalore.plot.builder.scale.mapper
 
 import jetbrains.datalore.base.gcommon.collect.ClosedRange
+import jetbrains.datalore.base.stringFormat.StringFormat
 import jetbrains.datalore.plot.base.DataFrame
 import jetbrains.datalore.plot.base.scale.Mappers
 import jetbrains.datalore.plot.builder.scale.GuideMapper
@@ -40,8 +41,9 @@ object GuideMappers {
         val mapper = Mappers.discrete(outputValues, naValue)
         return GuideMapperWithGuideBreaks(
             mapper,
-            domainValues.mapNotNull { it }
-        ) { v: Any -> v.toString() }
+            domainValues.mapNotNull { it },
+            StringFormat.asStringFormatter()
+        )
     }
 
     fun <TargetT> continuousToDiscrete(
@@ -63,8 +65,9 @@ object GuideMappers {
         val mapper = Mappers.discreteToContinuous(domainValues, outputRange, naValue)
         return GuideMapperWithGuideBreaks(
             mapper,
-            domainValues.mapNotNull { it }
-        ) { v: Any -> v.toString() }
+            domainValues.mapNotNull { it },
+            StringFormat.asStringFormatter()
+        )
     }
 
     fun continuousToContinuous(

@@ -6,6 +6,7 @@
 package jetbrains.datalore.plot.base.scale.transform
 
 import jetbrains.datalore.base.gcommon.collect.ClosedRange
+import jetbrains.datalore.base.stringFormat.StringFormat
 import jetbrains.datalore.plot.base.ContinuousTransform
 import jetbrains.datalore.plot.base.scale.BreaksGenerator
 import jetbrains.datalore.plot.base.scale.MapperUtil
@@ -20,7 +21,7 @@ object Transforms {
 
     fun createBreaksGeneratorForTransformedDomain(
         transform: ContinuousTransform,
-        labelFormatter: ((Any) -> String)? = null
+        labelFormatter: StringFormat? = null
     ): BreaksGenerator {
         val breaksGenerator: BreaksGenerator = when (transform) {
             IDENTITY -> LinearBreaksGen(labelFormatter)
@@ -60,6 +61,13 @@ object Transforms {
                 transform.applyInverse(it)
             }
             return breaksGenerator.labelFormatter(domainBeforeTransform, targetCount)
+        }
+
+        override fun defaultFormatter(domain: ClosedRange<Double>, targetCount: Int): (Any) -> String {
+            val domainBeforeTransform = MapperUtil.map(domain) {
+                transform.applyInverse(it)
+            }
+            return breaksGenerator.defaultFormatter(domainBeforeTransform, targetCount)
         }
 
         override fun generateBreaks(domain: ClosedRange<Double>, targetCount: Int): ScaleBreaks {

@@ -25,7 +25,7 @@ class StringFormatTest {
         assertEquals(2, StringFormat.create("{.1f} {}").argsNumber)
         assertEquals(3, StringFormat.create("{.1f} {.2f} {.3f}").argsNumber)
         assertEquals(1, StringFormat.create("%d.%m.%y %H:%M", DATETIME_FORMAT).argsNumber)
-        assertEquals(2,StringFormat.create("at {%H:%M} on {%A}", STRING_FORMAT).argsNumber)
+        assertEquals(2, StringFormat.create("at {%H:%M} on {%A}", STRING_FORMAT).argsNumber)
     }
 
     @Test
@@ -77,6 +77,28 @@ class StringFormatTest {
     }
 
     @Test
+    fun `as string formatter`() {
+        val formatter = StringFormat.asStringFormatter()
+
+        assertEquals("4", formatter.format(4))
+        assertEquals("4.123", formatter.format(4.123))
+        assertEquals("{.2f}", formatter.format("{.2f}"))
+        assertEquals("value is {}", formatter.format("value is {}"))
+    }
+
+    @Test
+    fun `use default formatting inside the string pattern`() {
+        val formatPattern = "value is {}"
+        val valueToFormat = 4.2
+        val defaultFormatter = { value: Any -> StringFormat.forOneArg("{.3f} %").format(value) }
+        val formattedString = StringFormat
+            .create(formatPattern)
+            .withDefaultFormatter(defaultFormatter)
+            .format(valueToFormat)
+        assertEquals("value is 4.200 %", formattedString)
+    }
+
+    @Test
     fun `static text in format`() {
         val formatPattern = "static text"
         val formattedString = StringFormat.create(formatPattern).format(emptyList())
@@ -100,7 +122,7 @@ class StringFormatTest {
             StringFormat.create(formatPattern).format(valuesToFormat)
         }
         assertEquals(
-            "Can't format values [1, 2] with pattern '{.1f} x {.2f} x {.3f}'). Wrong number of arguments: expected 3 instead of 2",
+            "Can't format values [1, 2] with pattern '{.1f} x {.2f} x {.3f}'. Wrong number of arguments: expected 3 instead of 2",
             exception.message
         )
     }

@@ -5,6 +5,7 @@
 
 package jetbrains.datalore.plot.builder
 
+import jetbrains.datalore.base.stringFormat.StringFormat
 import jetbrains.datalore.plot.base.Scale
 import jetbrains.datalore.plot.base.Transform
 import jetbrains.datalore.plot.base.scale.BreaksGenerator
@@ -14,7 +15,7 @@ internal class BogusScale : Scale<Double> {
     override val name: String
         get() = throw IllegalStateException("Bogus scale is not supposed to be used.")
 
-    override val labelFormatter: ((Any) -> String)
+    override val labelFormatter: StringFormat
         get() = throw IllegalStateException("Bogus scale is not supposed to be used.")
 
     override val isContinuous: Boolean

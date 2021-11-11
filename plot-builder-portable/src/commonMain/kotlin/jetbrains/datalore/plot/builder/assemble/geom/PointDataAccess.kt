@@ -53,6 +53,20 @@ internal class PointDataAccess(
 
     override fun isMappedDataContinuous(aes: Aes<*>): Boolean = getScale(aes).isContinuous
 
+    override fun getScaleFormatter(aes: Aes<*>): (Any) -> String {
+        val scale = getScale(aes)
+        if (scale.isContinuousDomain) {
+            val domain = myBindings
+                .getValue(aes)
+                .variable
+                .run(data::range)
+                .run(::ensureApplicableRange)
+
+            return scale.getBreaksGenerator().defaultFormatter(domain, 100)
+        }
+        return Any::toString
+    }
+
     private fun getScale(aes: Aes<*>): Scale<*> {
         return scaleByAes(aes)
     }

@@ -5,6 +5,7 @@
 
 package jetbrains.datalore.plot.base.scale
 
+import jetbrains.datalore.base.stringFormat.StringFormat
 import jetbrains.datalore.plot.base.ContinuousTransform
 import jetbrains.datalore.plot.base.Scale
 
@@ -19,7 +20,7 @@ internal abstract class AbstractScale<DomainT, T> : Scale<T> {
         protected set
     final override var additiveExpand = 0.0
         protected set
-    final override val labelFormatter: ((Any) -> String)?
+    final override val labelFormatter: StringFormat?
 
     override val isContinuous: Boolean
         get() = false
@@ -114,7 +115,10 @@ internal abstract class AbstractScale<DomainT, T> : Scale<T> {
         }
 
         // generate labels
-        val formatter: (Any) -> String = labelFormatter ?: { v: Any -> v.toString() }
+        val formatter: (Any) -> String = when {
+            labelFormatter != null -> labelFormatter::format
+            else -> { v: Any -> v.toString() }
+        }
         return breaks.map { formatter(it) }
     }
 
@@ -123,7 +127,7 @@ internal abstract class AbstractScale<DomainT, T> : Scale<T> {
 
         internal var myBreaks: List<DomainT>? = scale.definedBreaks
         internal var myLabels: List<String>? = scale.definedLabels
-        internal var myLabelFormatter: ((Any) -> String)? = scale.labelFormatter
+        internal var myLabelFormatter: StringFormat? = scale.labelFormatter
         internal var myMapper: (Double?) -> T? = scale.mapper
 
         internal var myMultiplicativeExpand: Double = scale.multiplicativeExpand
@@ -142,7 +146,7 @@ internal abstract class AbstractScale<DomainT, T> : Scale<T> {
             return this
         }
 
-        override fun labelFormatter(v: (Any) -> String): Scale.Builder<T> {
+        override fun labelFormatter(v: StringFormat): Scale.Builder<T> {
             myLabelFormatter = v
             return this
         }
