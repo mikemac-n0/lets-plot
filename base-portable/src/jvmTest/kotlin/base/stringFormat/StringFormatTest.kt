@@ -74,28 +74,12 @@ class StringFormatTest {
         val valueToFormat = 4.2
         val formattedString = StringFormat.create(formatPattern).format(valueToFormat)
         assertEquals("original value = 4.2", formattedString)
-    }
 
-    @Test
-    fun `as string formatter`() {
-        val formatter = StringFormat.asStringFormatter()
-
+       val formatter = StringFormat.forOneArg("{}")
         assertEquals("4", formatter.format(4))
         assertEquals("4.123", formatter.format(4.123))
         assertEquals("{.2f}", formatter.format("{.2f}"))
         assertEquals("value is {}", formatter.format("value is {}"))
-    }
-
-    @Test
-    fun `use default formatting inside the string pattern`() {
-        val formatPattern = "value is {}"
-        val valueToFormat = 4.2
-        val defaultFormatter = { value: Any -> StringFormat.forOneArg("{.3f} %").format(value) }
-        val formattedString = StringFormat
-            .create(formatPattern)
-            .withDefaultFormatter(defaultFormatter)
-            .format(valueToFormat)
-        assertEquals("value is 4.200 %", formattedString)
     }
 
     @Test

@@ -17,16 +17,4 @@ interface BreaksGenerator {
     fun labelFormatter(domain: ClosedRange<Double>, targetCount: Int): (Any) -> String
 
     fun defaultFormatter(domain: ClosedRange<Double>, targetCount: Int): (Any) -> String
-
-    companion object {
-        fun getLabelFormatter(
-            stringFormat: StringFormat?,
-            defaultFormatter: (Any) -> String
-        ): (Any) -> String {
-            return when {
-                stringFormat != null -> stringFormat.withDefaultFormatter(defaultFormatter)::format
-                else -> defaultFormatter
-            }
-        }
-    }
 }

@@ -20,7 +20,7 @@ internal abstract class AbstractScale<DomainT, T> : Scale<T> {
         protected set
     final override var additiveExpand = 0.0
         protected set
-    final override val labelFormatter: StringFormat?
+    final override val labelFormatter: ((Any) -> String)?
 
     override val isContinuous: Boolean
         get() = false
@@ -116,7 +116,7 @@ internal abstract class AbstractScale<DomainT, T> : Scale<T> {
 
         // generate labels
         val formatter: (Any) -> String = when {
-            labelFormatter != null -> labelFormatter::format
+            labelFormatter != null -> labelFormatter
             else -> { v: Any -> v.toString() }
         }
         return breaks.map { formatter(it) }
@@ -127,7 +127,7 @@ internal abstract class AbstractScale<DomainT, T> : Scale<T> {
 
         internal var myBreaks: List<DomainT>? = scale.definedBreaks
         internal var myLabels: List<String>? = scale.definedLabels
-        internal var myLabelFormatter: StringFormat? = scale.labelFormatter
+        internal var myLabelFormatter: ((Any) -> String)? = scale.labelFormatter
         internal var myMapper: (Double?) -> T? = scale.mapper
 
         internal var myMultiplicativeExpand: Double = scale.multiplicativeExpand
@@ -146,7 +146,7 @@ internal abstract class AbstractScale<DomainT, T> : Scale<T> {
             return this
         }
 
-        override fun labelFormatter(v: StringFormat): Scale.Builder<T> {
+        override fun labelFormatter(v: (Any) -> String): Scale.Builder<T> {
             myLabelFormatter = v
             return this
         }

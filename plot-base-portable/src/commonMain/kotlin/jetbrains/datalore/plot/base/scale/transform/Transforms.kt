@@ -21,7 +21,7 @@ object Transforms {
 
     fun createBreaksGeneratorForTransformedDomain(
         transform: ContinuousTransform,
-        labelFormatter: StringFormat? = null
+        labelFormatter: ((Any) -> String)? = null
     ): BreaksGenerator {
         val breaksGenerator: BreaksGenerator = when (transform) {
             IDENTITY -> LinearBreaksGen(labelFormatter)

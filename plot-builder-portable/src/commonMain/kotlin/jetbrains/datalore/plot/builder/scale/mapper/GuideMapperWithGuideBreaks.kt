@@ -5,14 +5,13 @@
 
 package jetbrains.datalore.plot.builder.scale.mapper
 
-import jetbrains.datalore.base.stringFormat.StringFormat
 import jetbrains.datalore.plot.builder.scale.GuideMapper
 import jetbrains.datalore.plot.builder.scale.WithGuideBreaks
 
 internal class GuideMapperWithGuideBreaks<DomainT, TargetT>(
     private val mapper: (Double?) -> TargetT?,
     override val breaks: List<DomainT>,
-    override val formatter: StringFormat
+    override val formatter: (DomainT) -> String
 ) : GuideMapper<TargetT>,
     WithGuideBreaks<DomainT> {
 

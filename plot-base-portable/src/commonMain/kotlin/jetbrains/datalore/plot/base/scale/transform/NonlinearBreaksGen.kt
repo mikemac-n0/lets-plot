@@ -6,10 +6,8 @@
 package jetbrains.datalore.plot.base.scale.transform
 
 import jetbrains.datalore.base.gcommon.collect.ClosedRange
-import jetbrains.datalore.base.stringFormat.StringFormat
 import jetbrains.datalore.plot.base.ContinuousTransform
 import jetbrains.datalore.plot.base.scale.BreaksGenerator
-import jetbrains.datalore.plot.base.scale.BreaksGenerator.Companion.getLabelFormatter
 import jetbrains.datalore.plot.base.scale.MapperUtil
 import jetbrains.datalore.plot.base.scale.ScaleBreaks
 import jetbrains.datalore.plot.base.scale.breaks.NumericBreakFormatter
@@ -18,18 +16,13 @@ import kotlin.math.min
 
 internal class NonlinearBreaksGen(
     private val transform: ContinuousTransform,
-    private val formatter: StringFormat? = null
+    private val formatter: ((Any) -> String)? = null
 ) : BreaksGenerator {
 
     override fun generateBreaks(domain: ClosedRange<Double>, targetCount: Int): ScaleBreaks {
         val breakValues = generateBreakValues(domain, targetCount, transform)
-        val labelFormatter: ((Any) -> String)? = if (formatter != null) {
-            formatter::format
-        } else {
-            null
-        }
-        val breakFormatters = if (labelFormatter != null) {
-            List(breakValues.size) { labelFormatter }
+        val breakFormatters = if (formatter != null) {
+            List(breakValues.size) { formatter }
         } else {
             createFormatters(breakValues)
         }
@@ -39,7 +32,7 @@ internal class NonlinearBreaksGen(
     }
 
     override fun labelFormatter(domain: ClosedRange<Double>, targetCount: Int): (Any) -> String {
-        return getLabelFormatter(formatter, defaultFormatter(domain, targetCount))
+        return formatter ?: defaultFormatter(domain, targetCount)
     }
 
     override fun defaultFormatter(domain: ClosedRange<Double>, targetCount: Int): (Any) -> String {

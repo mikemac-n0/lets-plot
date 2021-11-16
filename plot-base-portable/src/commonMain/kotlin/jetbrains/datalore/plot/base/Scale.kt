@@ -25,7 +25,7 @@ import jetbrains.datalore.plot.base.scale.ScaleBreaks
 interface Scale<T> {
     val name: String
 
-    val labelFormatter: StringFormat?
+    val labelFormatter: ((Any) -> String)?
 
     /**
      * @return TRUE if both, domain and range are continuous
@@ -77,7 +77,7 @@ interface Scale<T> {
 
         fun labels(l: List<String>): Builder<T>
 
-        fun labelFormatter(v: StringFormat): Builder<T>
+        fun labelFormatter(v: (Any) -> String): Builder<T>
 
         fun mapper(m: (Double?) -> T?): Builder<T>
 

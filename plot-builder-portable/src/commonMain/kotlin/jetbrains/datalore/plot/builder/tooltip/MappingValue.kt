@@ -41,8 +41,6 @@ class MappingValue(
             dataLabel in axisLabels -> ""
             else -> dataLabel
         }
-
-        myFormatter?.withDefaultFormatter(myDataAccess.getScaleFormatter(aes))
     }
 
     override fun getDataPoint(index: Int): DataPoint {

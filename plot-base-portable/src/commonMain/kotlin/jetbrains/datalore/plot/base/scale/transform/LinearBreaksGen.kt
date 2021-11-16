@@ -6,9 +6,7 @@
 package jetbrains.datalore.plot.base.scale.transform
 
 import jetbrains.datalore.base.gcommon.collect.ClosedRange
-import jetbrains.datalore.base.stringFormat.StringFormat
 import jetbrains.datalore.plot.base.scale.BreaksGenerator
-import jetbrains.datalore.plot.base.scale.BreaksGenerator.Companion.getLabelFormatter
 import jetbrains.datalore.plot.base.scale.ScaleBreaks
 import jetbrains.datalore.plot.base.scale.breaks.LinearBreaksHelper
 import jetbrains.datalore.plot.base.scale.breaks.NumericBreakFormatter
@@ -16,18 +14,18 @@ import kotlin.math.abs
 import kotlin.math.max
 
 internal class LinearBreaksGen(
-    private val formatter: StringFormat? = null
+    private val formatter: ((Any) -> String)? = null
 ) : BreaksGenerator {
 
     override fun generateBreaks(domain: ClosedRange<Double>, targetCount: Int): ScaleBreaks {
         val breaks = generateBreakValues(domain, targetCount)
-        val labelFormatter = getLabelFormatter(formatter, createFormatter(breaks))
-        val labels = breaks.map { labelFormatter(it) }
+        val fmt = formatter ?: createFormatter(breaks)
+        val labels = breaks.map { fmt(it) }
         return ScaleBreaks(breaks, breaks, labels)
     }
 
     override fun labelFormatter(domain: ClosedRange<Double>, targetCount: Int): (Any) -> String {
-        return getLabelFormatter(formatter, defaultFormatter(domain, targetCount))
+        return formatter ?: defaultFormatter(domain, targetCount)
     }
 
     override fun defaultFormatter(domain: ClosedRange<Double>, targetCount: Int): (Any) -> String {

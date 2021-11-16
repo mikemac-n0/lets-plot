@@ -22,8 +22,7 @@ class StringFormat private constructor(
         STRING_FORMAT
     }
 
-    private val myFormatters: List<((Any) -> String)?>
-    private var myDefaultFormatter: ((Any) -> String) = Any::toString
+    private val myFormatters: List<(Any) -> String>
 
     init {
         myFormatters = when (formatType) {
@@ -45,11 +44,6 @@ class StringFormat private constructor(
 
     val argsNumber = myFormatters.size
 
-    fun withDefaultFormatter(formatter: ((Any) -> String)): StringFormat {
-        myDefaultFormatter = formatter
-        return this
-    }
-
     fun format(value: Any): String = format(listOf(value))
 
     fun format(values: List<Any>): String {
@@ -59,14 +53,14 @@ class StringFormat private constructor(
         return when (formatType) {
             NUMBER_FORMAT, DATETIME_FORMAT -> {
                 require(myFormatters.size == 1)
-                formatValue(values.single(), myFormatters.single())
+                myFormatters.single()(values.single())
             }
             STRING_FORMAT -> {
                 var index = 0
                 BRACES_REGEX.replace(pattern) {
                     val originalValue = values[index]
                     val formatter = myFormatters[index++]
-                    formatValue(originalValue, formatter)
+                    formatter(originalValue)
                 }
                     .replace("{{", "{")
                     .replace("}}", "}")
@@ -74,9 +68,9 @@ class StringFormat private constructor(
         }
     }
 
-    private fun initFormatter(formatPattern: String, formatType: FormatType): ((Any) -> String)? {
+    private fun initFormatter(formatPattern: String, formatType: FormatType): ((Any) -> String) {
         if (formatPattern.isEmpty()) {
-            return null
+            return Any::toString
         }
         when (formatType) {
             NUMBER_FORMAT -> {
@@ -107,13 +101,6 @@ class StringFormat private constructor(
         }
     }
 
-    private fun formatValue(value: Any, formatter: ((Any) -> String)?): String {
-        return when (formatter) {
-            null -> myDefaultFormatter(value)
-            else -> formatter(value)
-        }
-    }
-
     companion object {
         // Format strings contain “replacement fields” surrounded by braces {}.
         // Anything that is not contained in braces is considered literal text, which is copied unchanged to the output.
@@ -126,10 +113,6 @@ class StringFormat private constructor(
         const val TEXT_IN_BRACES = 2
 
         fun valueInLinePattern() = "{}"
-
-        fun asStringFormatter() : StringFormat {
-            return create(pattern = valueInLinePattern(), type = STRING_FORMAT)
-        }
 
         fun forOneArg(
             pattern: String,
