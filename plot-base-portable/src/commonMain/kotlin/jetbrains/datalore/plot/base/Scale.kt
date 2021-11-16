@@ -5,7 +5,6 @@
 
 package jetbrains.datalore.plot.base
 
-import jetbrains.datalore.base.stringFormat.StringFormat
 import jetbrains.datalore.plot.base.scale.BreaksGenerator
 import jetbrains.datalore.plot.base.scale.ScaleBreaks
 

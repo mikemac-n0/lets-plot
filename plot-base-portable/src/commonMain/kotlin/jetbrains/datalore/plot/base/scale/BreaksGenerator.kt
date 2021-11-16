@@ -6,7 +6,6 @@
 package jetbrains.datalore.plot.base.scale
 
 import jetbrains.datalore.base.gcommon.collect.ClosedRange
-import jetbrains.datalore.base.stringFormat.StringFormat
 
 interface BreaksGenerator {
     fun generateBreaks(domain: ClosedRange<Double>, targetCount: Int): ScaleBreaks

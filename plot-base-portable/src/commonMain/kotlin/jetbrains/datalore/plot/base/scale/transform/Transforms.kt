@@ -6,7 +6,6 @@
 package jetbrains.datalore.plot.base.scale.transform
 
 import jetbrains.datalore.base.gcommon.collect.ClosedRange
-import jetbrains.datalore.base.stringFormat.StringFormat
 import jetbrains.datalore.plot.base.ContinuousTransform
 import jetbrains.datalore.plot.base.scale.BreaksGenerator
 import jetbrains.datalore.plot.base.scale.MapperUtil

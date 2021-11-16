@@ -5,7 +5,6 @@
 
 package jetbrains.datalore.plot.base.scale
 
-import jetbrains.datalore.base.stringFormat.StringFormat
 import jetbrains.datalore.plot.base.ContinuousTransform
 import jetbrains.datalore.plot.base.Scale
 
@@ -115,10 +114,7 @@ internal abstract class AbstractScale<DomainT, T> : Scale<T> {
         }
 
         // generate labels
-        val formatter: (Any) -> String = when {
-            labelFormatter != null -> labelFormatter
-            else -> { v: Any -> v.toString() }
-        }
+        val formatter: (Any) -> String = labelFormatter ?: { v: Any -> v.toString() }
         return breaks.map { formatter(it) }
     }
 
