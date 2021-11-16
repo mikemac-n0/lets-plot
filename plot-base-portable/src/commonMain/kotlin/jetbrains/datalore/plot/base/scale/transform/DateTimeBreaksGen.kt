@@ -17,9 +17,8 @@ class DateTimeBreaksGen(
         val helper = breaksHelper(domain, targetCount)
         val ticks = helper.breaks
         val labelFormatter = labelFormatter ?: helper.formatter
-        val labels = ArrayList<String>()
-        for (tick in ticks) {
-            labels.add(labelFormatter(tick))
+        val labels = ticks.map { tick ->
+            labelFormatter(tick)
         }
         return ScaleBreaks(ticks, ticks, labels)
     }

@@ -36,7 +36,7 @@ class DataFrameValue(
         val originalValue = myDataFrame[myVariable][index] ?: return null
         return DataPoint(
             label = name,
-            value = myFormatter?.format(originalValue) ?: originalValue.toString(),
+            value = myFormatter?.invoke(originalValue) ?: originalValue.toString(),
             aes = null,
             isAxis = false,
             isOutlier = false

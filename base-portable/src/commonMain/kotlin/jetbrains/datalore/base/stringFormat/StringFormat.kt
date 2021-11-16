@@ -44,9 +44,9 @@ class StringFormat private constructor(
 
     val argsNumber = myFormatters.size
 
-    fun format(value: Any): String = format(listOf(value))
+    internal fun format(value: Any): String = format(listOf(value))
 
-    fun format(values: List<Any>): String {
+    internal fun format(values: List<Any>): String {
         if (argsNumber != values.size) {
             error("Can't format values $values with pattern '$pattern'. Wrong number of arguments: expected $argsNumber instead of ${values.size}")
         }
@@ -117,17 +117,35 @@ class StringFormat private constructor(
         fun forOneArg(
             pattern: String,
             type: FormatType? = null,
-            formatFor: String? = null,
-        ): StringFormat {
-            return create(pattern, type, formatFor, 1)
+            formatFor: String? = null
+        ): (Any) -> String {
+            return toFormatFunc(pattern, type, formatFor, expectedArgs = 1)
         }
 
         fun forNArgs(
             pattern: String,
             argCount: Int,
             formatFor: String? = null
-        ): StringFormat {
-            return create(pattern, STRING_FORMAT, formatFor, argCount)
+        ): (Any) -> String {
+            return toFormatFunc(pattern, STRING_FORMAT, formatFor, argCount)
+        }
+
+        private fun toFormatFunc(
+            pattern: String,
+            type: FormatType?,
+            formatFor: String?,
+            expectedArgs: Int
+        ): (Any) -> String {
+            val sf = create(pattern, type, formatFor, expectedArgs)
+            return { value ->
+                when (value) {
+                    is List<*> -> {
+                        @Suppress("UNCHECKED_CAST")
+                        sf.format(value as List<Any>)
+                    }
+                    else -> sf.format(value)
+                }
+            }
         }
 
         private fun detectFormatType(pattern: String): FormatType {

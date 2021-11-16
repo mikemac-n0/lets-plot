@@ -15,7 +15,7 @@ class ConstantValue(
 ) : ValueSource {
 
     private val myDataValue = if (format != null) {
-        StringFormat.forOneArg(format).format(value)
+        StringFormat.forOneArg(format).invoke(value)
     } else {
         value.toString()
     }
@@ -26,7 +26,7 @@ class ConstantValue(
     override fun initDataContext(dataContext: DataContext) {
     }
 
-    override fun getDataPoint(index: Int): DataPoint? {
+    override fun getDataPoint(index: Int): DataPoint {
         return DataPoint(
             label = "",
             value = myDataValue,

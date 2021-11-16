@@ -75,11 +75,11 @@ class StringFormatTest {
         val formattedString = StringFormat.create(formatPattern).format(valueToFormat)
         assertEquals("original value = 4.2", formattedString)
 
-       val formatter = StringFormat.forOneArg("{}")
-        assertEquals("4", formatter.format(4))
-        assertEquals("4.123", formatter.format(4.123))
-        assertEquals("{.2f}", formatter.format("{.2f}"))
-        assertEquals("value is {}", formatter.format("value is {}"))
+        val formatter = StringFormat.forOneArg("{}")
+        assertEquals("4", formatter(4))
+        assertEquals("4.123", formatter(4.123))
+        assertEquals("{.2f}", formatter("{.2f}"))
+        assertEquals("value is {}", formatter("value is {}"))
     }
 
     @Test
@@ -109,6 +109,26 @@ class StringFormatTest {
             "Can't format values [1, 2] with pattern '{.1f} x {.2f} x {.3f}'. Wrong number of arguments: expected 3 instead of 2",
             exception.message
         )
+    }
+
+    @Test
+    fun `wrong number of arguments in pattern`() {
+        assertFailsWith(IllegalArgumentException::class) {
+            StringFormat.forOneArg("{.2f} {.2f}")
+        }.let { exception ->
+            assertEquals(
+                "Wrong number of arguments in pattern '{.2f} {.2f}' . Expected 1 argument instead of 2",
+                exception.message
+            )
+        }
+        assertFailsWith(IllegalArgumentException::class) {
+            StringFormat.forNArgs("{.2f} {.2f}", argCount = 3)
+        }.let { exception ->
+            assertEquals(
+                "Wrong number of arguments in pattern '{.2f} {.2f}' . Expected 3 arguments instead of 2",
+                exception.message
+            )
+        }
     }
 
     @Test

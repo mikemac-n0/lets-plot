@@ -20,7 +20,7 @@ import jetbrains.datalore.plot.base.render.svg.TextLabel
 import jetbrains.datalore.plot.common.data.SeriesUtil
 
 class TextGeom : GeomBase() {
-    var formatter: ((Any)->String)? = null
+    var formatter: ((Any) -> String)? = null
     var naValue = DEF_NA_VALUE
     var sizeUnit: String? = null
 
