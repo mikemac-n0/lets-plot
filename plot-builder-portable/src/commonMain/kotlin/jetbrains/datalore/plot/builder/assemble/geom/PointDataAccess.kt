@@ -53,6 +53,21 @@ internal class PointDataAccess(
 
     override fun isMappedDataContinuous(aes: Aes<*>): Boolean = getScale(aes).isContinuous
 
+    override fun getScaleDefaultFormatter(aes: Aes<*>): (Any) -> String {
+        val scale = getScale(aes)
+        if (scale.isContinuousDomain) {
+            // only 'stat' or 'transform' vars here
+            val domain = myBindings
+                .getValue(aes)
+                .variable
+                .run(data::range)
+                .run(::ensureApplicableRange)
+
+            return scale.getBreaksGenerator().defaultFormatter(domain, 100)
+        }
+        return Any::toString
+    }
+
     private fun getScale(aes: Aes<*>): Scale<*> {
         return scaleByAes(aes)
     }
@@ -64,14 +79,7 @@ internal class PointDataAccess(
 
     private fun createFormatter(aes: Aes<*>, scale: Scale<*>): (Any?) -> String {
         if (scale.isContinuousDomain) {
-            // only 'stat' or 'transform' vars here
-            val domain = myBindings
-                .getValue(aes)
-                .variable
-                .run(data::range)
-                .run(::ensureApplicableRange)
-
-            val formatter = scale.getBreaksGenerator().defaultFormatter(domain, 100)
+            val formatter = getScaleDefaultFormatter(aes)
             return { value -> value?.let { formatter.invoke(it) } ?: "n/a" }
         } else {
             val labelsMap = labelByBreak(scale)

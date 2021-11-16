@@ -24,6 +24,8 @@ interface MappedDataAccess {
 
     fun isMappedDataContinuous(aes: Aes<*>): Boolean
 
+    fun getScaleDefaultFormatter(aes: Aes<*>): (Any) -> String
+
     class MappedData<T>(
         val label: String,
         val value: String,

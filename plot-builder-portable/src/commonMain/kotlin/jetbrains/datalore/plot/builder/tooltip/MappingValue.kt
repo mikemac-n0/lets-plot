@@ -20,9 +20,8 @@ class MappingValue(
 
     private lateinit var myDataAccess: MappedDataAccess
     private var myDataLabel: String? = null
-    private val myFormatter = format?.let {
-        StringFormat.forOneArg(format, formatFor = aes.name)
-    }
+    private var myFormatter: ((Any) -> String)? = null
+    private var myDefaultValueFormatter: ((Any) -> String)? = null
 
     override fun initDataContext(dataContext: DataContext) {
         require(!::myDataAccess.isInitialized) { "Data context can be initialized only once" }
@@ -41,12 +40,38 @@ class MappingValue(
             dataLabel in axisLabels -> ""
             else -> dataLabel
         }
+
+        if (format != null) {
+            // detach the default format from the pattern - inside curly braces: ".. {default_pattern} .."
+            val formatInsideBraces = StringFormat.detachEnclosedInBraces(format)
+            when {
+                formatInsideBraces.size == 1 && formatInsideBraces.single().isNotEmpty() -> {
+                    // "{pattern}" -> 'pattern' as default formatter, the result will be used by the user formatter
+                    val defaultFormat = formatInsideBraces.single()
+                    myDefaultValueFormatter = StringFormat.forOneArg(defaultFormat)
+                    myFormatter = StringFormat.forOneArg(format.replace(defaultFormat, ""), formatFor = aes.name)
+                }
+                formatInsideBraces.size == 1 -> {
+                    // "{}" -> use the default scale formatter to format original value
+                    myDefaultValueFormatter = myDataAccess.getScaleDefaultFormatter(aes)
+                    myFormatter = StringFormat.forOneArg(format, formatFor = aes.name)
+                }
+                else -> {
+                    myDefaultValueFormatter = null
+                    myFormatter = StringFormat.forOneArg(format, formatFor = aes.name)
+                }
+            }
+        }
     }
 
     override fun getDataPoint(index: Int): DataPoint {
         val originalValue = myDataAccess.getOriginalValue(aes, index)
-        val formattedValue =
-            originalValue?.let { myFormatter?.format(it) } ?: myDataAccess.getMappedData(aes, index).value
+        val formattedValue = if (myFormatter != null && myDefaultValueFormatter != null) {
+            val defaultFormattedValue = originalValue?.let { myDefaultValueFormatter!!.invoke(it) }
+            defaultFormattedValue?.let { myFormatter!!.invoke(it) }
+        } else {
+            originalValue?.let { myFormatter?.invoke(it) }
+        } ?: myDataAccess.getMappedData(aes, index).value
         return DataPoint(
             label = myDataLabel,
             value = formattedValue,

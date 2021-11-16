@@ -439,21 +439,6 @@ class TooltipConfigTest {
         )
     }
 
-    @Test
-    fun `wrong tooltip format (wrong number of arguments)`() {
-        assertFailTooltipSpec(
-            tooltipConfig = mapOf(
-                TOOLTIP_FORMATS to listOf(
-                    mapOf(
-                        FIELD to "^color",
-                        FORMAT to "{.2f} {.2f}"
-                    )
-                )
-            ),
-            expectedMessage = "Wrong number of arguments in pattern '{.2f} {.2f}' to format 'color'. Expected 1 argument instead of 2"
-        )
-    }
-
     private fun assertFailTooltipSpec(
         tooltipConfig: Any?,
         expectedMessage: String
@@ -799,29 +784,53 @@ class TooltipConfigTest {
 
     @Test
     fun `format() should understand DateTime format`() {
-        val geomLayer = buildPointLayer(
-            data = mapOf(
-                "x" to listOf(1609459200000),
-                "y" to listOf(0.0)
-            ),
-            mapping = mapOf(
-                Aes.X.name to "x",
-                Aes.Y.name to "y",
-            ),
-            tooltips = mapOf(
-                TOOLTIP_LINES to listOf("^x"),
-                TOOLTIP_FORMATS to listOf(
-                    mapOf(
-                        FIELD to "^x",
-                        FORMAT to "%d.%m.%y"
+        val dt = mapOf(
+            "x" to listOf(1609459200000),
+            "y" to listOf(0.0)
+        )
+        val mapping = mapOf(
+            Aes.X.name to "x",
+            Aes.Y.name to "y",
+        )
+        run {
+            val geomLayer = buildPointLayer(
+                data = dt,
+                mapping = mapping,
+                tooltips = mapOf(
+                    TOOLTIP_LINES to listOf("^x"),
+                    TOOLTIP_FORMATS to listOf(
+                        mapOf(
+                            FIELD to "^x",
+                            FORMAT to "%d.%m.%y"
+                        )
                     )
                 )
             )
-        )
-        assertTooltipStrings(
-            expected = listOf("01.01.21"),
-            actual = getGeneralTooltipStrings(geomLayer)
-        )
+            assertTooltipStrings(
+                expected = listOf("01.01.21"),
+                actual = getGeneralTooltipStrings(geomLayer)
+            )
+        }
+        run {
+            // use braces in format
+            val geomLayer = buildPointLayer(
+                data = dt,
+                mapping = mapping,
+                tooltips = mapOf(
+                    TOOLTIP_LINES to listOf("^x"),
+                    TOOLTIP_FORMATS to listOf(
+                        mapOf(
+                            FIELD to "^x",
+                            FORMAT to "date is {%d.%m.%y}"
+                        )
+                    )
+                )
+            )
+            assertTooltipStrings(
+                expected = listOf("date is 01.01.21"),
+                actual = getGeneralTooltipStrings(geomLayer)
+            )
+        }
     }
 
     @Test
@@ -856,6 +865,20 @@ class TooltipConfigTest {
         }
     }
 
+
+        run { // + tooltips.format("@varName", "{} %")
+            val tooltipConfig = mapOf(
+                TOOLTIP_LINES to listOf("^y"),
+                TOOLTIP_FORMATS to listOf(
+                    mapOf(FIELD to "@v", FORMAT to "tooltip = {} %")
+                )
+            )
+            val geomLayer = buildPointLayer(data, mapping, tooltips = tooltipConfig)
+            assertGeneralTooltip(geomLayer, "tooltip = 0.12 %")
+            assertYAxisTooltip(geomLayer, "tooltip = 0.12 %")
+        }
+    }
+*/
     companion object {
         private fun getGeneralTooltipStrings(geomLayer: GeomLayer): List<String> {
             return getGeneralTooltipLines(geomLayer).map(Line::toString)

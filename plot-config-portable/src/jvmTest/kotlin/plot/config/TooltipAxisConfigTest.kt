@@ -107,8 +107,8 @@ class TooltipAxisConfigTest {
                 )
             )
             val geomLayer = TestUtil.buildPointLayer(data, mapping, tooltips = tooltipConfig)
-            assertGeneralTooltip(geomLayer, "tooltip = 0.34447 %")
-            assertYAxisTooltip(geomLayer, "tooltip = 0.34447 %")
+            assertGeneralTooltip(geomLayer, "tooltip = 0.34 %")
+            assertYAxisTooltip(geomLayer, "tooltip = 0.34 %")
         }
         run {
             val tooltipConfig = mapOf(
@@ -146,8 +146,8 @@ class TooltipAxisConfigTest {
                 )
             )
             val geomLayer = TestUtil.buildPointLayer(data, mapping, tooltips = tooltipConfig, scales = scales)
-            assertGeneralTooltip(geomLayer, "tooltip = 0.34447 %")
-            assertYAxisTooltip(geomLayer, "tooltip = 0.34447 %")
+            assertGeneralTooltip(geomLayer, "tooltip = 0.34 %")
+            assertYAxisTooltip(geomLayer, "tooltip = 0.34 %")
         }
         run {
             val tooltipConfig = mapOf(
@@ -185,8 +185,8 @@ class TooltipAxisConfigTest {
                 )
             )
             val geomLayer = TestUtil.buildPointLayer(data, mapping, tooltips = tooltipConfig)
-            assertGeneralTooltip(geomLayer, "tooltip = 0.34447 %")
-            assertYAxisTooltip(geomLayer, "tooltip = 0.34447 %")
+            assertGeneralTooltip(geomLayer, "tooltip = 0.34 %")
+            assertYAxisTooltip(geomLayer, "tooltip = 0.34 %")
         }
         run {
             val tooltipConfig = mapOf(
@@ -201,6 +201,20 @@ class TooltipAxisConfigTest {
             val geomLayer = TestUtil.buildPointLayer(data, mapping, tooltips = tooltipConfig)
             assertGeneralTooltip(geomLayer, "tooltip = 0.3445 %")
             assertYAxisTooltip(geomLayer, "tooltip = 0.3445 %")
+        }
+        run {
+            val tooltipConfig = mapOf(
+                TOOLTIP_LINES to listOf("@v"),     // as variable
+                TOOLTIP_FORMATS to listOf(
+                    mapOf(
+                        FIELD to "@v",
+                        FORMAT to "tooltip = {} %"  // using default formatter
+                    )
+                )
+            )
+            val geomLayer = TestUtil.buildPointLayer(data, mapping, tooltips = tooltipConfig)
+            assertGeneralTooltip(geomLayer, "tooltip = 0.34447 %")
+            assertYAxisTooltip(geomLayer, "tooltip = 0.34 %")
         }
     }
 

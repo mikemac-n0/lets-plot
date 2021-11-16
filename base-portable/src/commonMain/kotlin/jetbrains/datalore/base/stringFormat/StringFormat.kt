@@ -28,8 +28,7 @@ class StringFormat private constructor(
         myFormatters = when (formatType) {
             NUMBER_FORMAT, DATETIME_FORMAT -> listOf(initFormatter(pattern, formatType))
             STRING_FORMAT -> {
-                BRACES_REGEX.findAll(pattern)
-                    .map { it.groupValues[TEXT_IN_BRACES] }
+                detachEnclosedInBraces(pattern)
                     .map { format ->
                         val formatType = detectFormatType(format)
                         require(formatType == NUMBER_FORMAT || formatType == DATETIME_FORMAT) {
@@ -110,7 +109,13 @@ class StringFormat private constructor(
         //     "{.1f} -> 1.2
         //     "{{{.1f}}} -> {1.2}
         private val BRACES_REGEX = Regex("""(?![^{]|\{\{)(\{([^{}]*)\})(?=[^}]|\}\}|$)""")
-        const val TEXT_IN_BRACES = 2
+        private const val TEXT_IN_BRACES = 2
+
+        fun detachEnclosedInBraces(pattern: String): List<String> {
+            return BRACES_REGEX.findAll(pattern)
+                .map { it.groupValues[TEXT_IN_BRACES] }
+                .toList()
+        }
 
         fun valueInLinePattern() = "{}"
 
