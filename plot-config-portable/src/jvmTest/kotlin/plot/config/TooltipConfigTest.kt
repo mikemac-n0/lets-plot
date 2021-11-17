@@ -865,20 +865,6 @@ class TooltipConfigTest {
         }
     }
 
-
-        run { // + tooltips.format("@varName", "{} %")
-            val tooltipConfig = mapOf(
-                TOOLTIP_LINES to listOf("^y"),
-                TOOLTIP_FORMATS to listOf(
-                    mapOf(FIELD to "@v", FORMAT to "tooltip = {} %")
-                )
-            )
-            val geomLayer = buildPointLayer(data, mapping, tooltips = tooltipConfig)
-            assertGeneralTooltip(geomLayer, "tooltip = 0.12 %")
-            assertYAxisTooltip(geomLayer, "tooltip = 0.12 %")
-        }
-    }
-*/
     companion object {
         private fun getGeneralTooltipStrings(geomLayer: GeomLayer): List<String> {
             return getGeneralTooltipLines(geomLayer).map(Line::toString)
