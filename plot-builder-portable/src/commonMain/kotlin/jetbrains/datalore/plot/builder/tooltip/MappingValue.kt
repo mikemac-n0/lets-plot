@@ -48,17 +48,17 @@ class MappingValue(
                 formatInsideBraces.size == 1 && formatInsideBraces.single().isNotEmpty() -> {
                     // "{pattern}" -> 'pattern' as default formatter, the result will be used by the user formatter
                     val defaultFormat = formatInsideBraces.single()
-                    myDefaultValueFormatter = StringFormat.forOneArg(defaultFormat)
-                    myFormatter = StringFormat.forOneArg(format.replace(defaultFormat, ""), formatFor = aes.name)
+                    myDefaultValueFormatter = StringFormat.forOneArg(defaultFormat)::format
+                    myFormatter = StringFormat.forOneArg(format.replace(defaultFormat, ""), formatFor = aes.name)::format
                 }
                 formatInsideBraces.size == 1 -> {
                     // "{}" -> use the default scale formatter to format original value
                     myDefaultValueFormatter = myDataAccess.getScaleDefaultFormatter(aes)
-                    myFormatter = StringFormat.forOneArg(format, formatFor = aes.name)
+                    myFormatter = StringFormat.forOneArg(format, formatFor = aes.name)::format
                 }
                 else -> {
                     myDefaultValueFormatter = null
-                    myFormatter = StringFormat.forOneArg(format, formatFor = aes.name)
+                    myFormatter = StringFormat.forOneArg(format, formatFor = aes.name)::format
                 }
             }
         } else {
@@ -70,8 +70,7 @@ class MappingValue(
         val valueToFormat: Any? = myDataAccess.getOriginalValue(aes, index)?.let { originalValue ->
             if (myDefaultValueFormatter != null) {
                 myDefaultValueFormatter!!.invoke(originalValue)
-            }
-            else {
+            } else {
                 originalValue
             }
         }

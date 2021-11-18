@@ -75,7 +75,7 @@ class StringFormatTest {
         val formattedString = StringFormat.create(formatPattern).format(valueToFormat)
         assertEquals("original value = 4.2", formattedString)
 
-        val formatter = StringFormat.forOneArg("{}")
+        val formatter = { value: Any -> StringFormat.forOneArg("{}").format(value) }
         assertEquals("4", formatter(4))
         assertEquals("4.123", formatter(4.123))
         assertEquals("{.2f}", formatter("{.2f}"))
@@ -236,5 +236,11 @@ class StringFormatTest {
             "Can't detect type of pattern 'PP' used in string pattern '{.1f} x {PP}'",
             exception.message
         )
+    }
+
+    @Test
+    fun nullable() {
+        val formatter = StringFormat.nullableFormatter(StringFormat.forOneArg("{}")::format, "null")
+        assertEquals("null", formatter.invoke(null))
     }
 }

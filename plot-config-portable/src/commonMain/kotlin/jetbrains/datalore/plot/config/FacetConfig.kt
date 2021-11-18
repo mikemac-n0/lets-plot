@@ -138,7 +138,8 @@ internal class FacetConfig(options: Map<String, Any>) : OptionsAccessor(options)
         return when (optionVal) {
             null -> DEF_FORMATTER
             else -> {
-                return StringFormat.forOneArg(optionVal.toString())
+                val fmt = StringFormat.forOneArg(optionVal.toString())
+                return { value: Any -> fmt.format(value) }
             }
         }
     }

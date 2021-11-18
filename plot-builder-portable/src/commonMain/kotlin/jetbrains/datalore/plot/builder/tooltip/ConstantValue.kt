@@ -15,7 +15,7 @@ class ConstantValue(
 ) : ValueSource {
 
     private val myDataValue = if (format != null) {
-        StringFormat.forOneArg(format).invoke(value)
+        StringFormat.forOneArg(format).format(value)
     } else {
         value.toString()
     }

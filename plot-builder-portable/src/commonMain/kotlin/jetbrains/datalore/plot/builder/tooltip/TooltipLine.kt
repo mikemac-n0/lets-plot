@@ -31,7 +31,7 @@ class TooltipLine(
             val dataValue = dataValues.single()
             DataPoint(
                 label = chooseLabel(dataValue.label),
-                value = myLineFormatter(dataValue.value),
+                value = myLineFormatter.format(dataValue.value),
                 aes = dataValue.aes,
                 isAxis = dataValue.isAxis,
                 isOutlier = dataValue.isOutlier
@@ -39,7 +39,7 @@ class TooltipLine(
         } else {
             DataPoint(
                 label = chooseLabel(dataValues.joinToString(", ") { it.label ?: "" }),
-                value = myLineFormatter(dataValues.map(DataPoint::value)),
+                value = myLineFormatter.format(dataValues.map(DataPoint::value)),
                 aes = null,
                 isAxis = false,
                 isOutlier = false
