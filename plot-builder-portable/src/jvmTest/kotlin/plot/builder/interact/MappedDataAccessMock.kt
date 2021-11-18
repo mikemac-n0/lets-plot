@@ -7,21 +7,14 @@ package jetbrains.datalore.plot.builder.interact
 
 import jetbrains.datalore.plot.base.Aes
 import jetbrains.datalore.plot.base.interact.MappedDataAccess
-import jetbrains.datalore.plot.base.interact.MappedDataAccess.MappedData
 import jetbrains.datalore.plot.builder.interact.mockito.eq
 import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
 
 class MappedDataAccessMock {
-
     private val mappedAes = HashSet<Aes<*>>()
     val mappedDataAccess: MappedDataAccess = mock(MappedDataAccess::class.java)
-
-    init {
-        `when`(mappedDataAccess.mappedAes)
-                .thenReturn(getMappedAes())
-    }
 
     fun <T> add(mapping: Mapping<T>): MappedDataAccessMock {
         return add(mapping, null)
@@ -31,53 +24,40 @@ class MappedDataAccessMock {
         val aes = mapping.aes
 
         if (index == null) {
-            `when`(mappedDataAccess.getMappedData(eq(aes), anyInt()))
-                .thenReturn(mapping.createMappedData())
-            `when`(mappedDataAccess.getMappedDataLabel(eq(aes)))
-                .thenReturn(mapping.label)
-            `when`(mappedDataAccess.isMappedDataContinuous(eq(aes)))
-                .thenReturn(mapping.isContinuous)
+            `when`(mappedDataAccess.getOriginalValue(eq(aes), anyInt()))
+                .thenReturn(mapping.value)
         } else {
-            `when`(mappedDataAccess.getMappedData(eq(aes), eq(index)))
-                    .thenReturn(mapping.createMappedData())
+            `when`(mappedDataAccess.getOriginalValue(eq(aes), eq(index)))
+                .thenReturn(mapping.value)
         }
 
         `when`(mappedDataAccess.isMapped(eq(aes)))
-                .thenReturn(true)
+            .thenReturn(true)
+        `when`(mappedDataAccess.getMappedDataLabel(eq(aes)))
+            .thenReturn(mapping.label)
+        `when`(mappedDataAccess.getScaleDefaultFormatter(eq(aes)))
+            .thenReturn(Any::toString)
 
         getMappedAes().add(aes)
 
         return this
     }
 
-    internal fun remove(aes: Aes<*>) {
-        getMappedAes().remove(aes)
-
-        `when`<MappedData<*>>(mappedDataAccess.getMappedData(eq(aes), anyInt()))
-                .thenReturn(null)
-
-        `when`(mappedDataAccess.isMapped(eq(aes)))
-                .thenReturn(false)
-    }
-
     fun getMappedAes(): MutableSet<Aes<*>> {
         return mappedAes
     }
 
-    class Mapping<T> internal constructor(internal val aes: Aes<T>,
-                                          internal val label: String,
-                                          private val value: String,
-                                          internal val isContinuous: Boolean) {
+    class Mapping<T> internal constructor(
+        internal val aes: Aes<T>,
+        internal val label: String,
+        internal val value: String,
+    ) {
         fun longTooltipText(): String {
             return "$label: $value"
         }
 
         fun shortTooltipText(): String {
             return value
-        }
-
-        internal fun createMappedData(): MappedData<T> {
-            return MappedData(label, value, isContinuous)
         }
     }
 
@@ -102,7 +82,7 @@ class MappedDataAccessMock {
         }
 
         fun <T> mapping(aes: Aes<T>): Mapping<T> {
-            return Mapping(aes, name, value, isContinuous)
+            return Mapping(aes, name, value)
         }
 
     }

@@ -835,7 +835,7 @@ class TooltipConfigTest {
 
     @Test
     fun `tooltip format() should be applied to axis tooltips`() {
-        val formats =  listOf(
+        val formats = listOf(
             mapOf(FIELD to "^x", FORMAT to "x = {.1f}"), //  x-axis tooltip
             mapOf(FIELD to "^Y", FORMAT to "y = {.1f}")  //  all positionals including y-axis tooltip
         )
