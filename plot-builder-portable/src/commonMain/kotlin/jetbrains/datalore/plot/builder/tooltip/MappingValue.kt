@@ -20,7 +20,7 @@ class MappingValue(
 
     private lateinit var myDataAccess: MappedDataAccess
     private var myDataLabel: String? = null
-    private lateinit var myFormatter: ((Any) -> String)
+    private lateinit var myFormatter: (Any) -> String
     private var myDefaultValueFormatter: ((Any) -> String)? = null
 
     override fun initDataContext(dataContext: DataContext) {
@@ -67,13 +67,15 @@ class MappingValue(
     }
 
     override fun getDataPoint(index: Int): DataPoint {
-        val originalValue = myDataAccess.getOriginalValue(aes, index)
-        val formattedValue = if (myDefaultValueFormatter != null) {
-            val defaultFormattedValue = originalValue?.let { myDefaultValueFormatter!!.invoke(it) }
-            defaultFormattedValue?.let { myFormatter.invoke(it) }
-        } else {
-            originalValue?.let { myFormatter.invoke(it) }
-        } ?: "n/a"
+        val valueToFormat: Any? = myDataAccess.getOriginalValue(aes, index)?.let { originalValue ->
+            if (myDefaultValueFormatter != null) {
+                myDefaultValueFormatter!!.invoke(originalValue)
+            }
+            else {
+                originalValue
+            }
+        }
+        val formattedValue = valueToFormat?.let { myFormatter.invoke(it) } ?: "n/a"
         return DataPoint(
             label = myDataLabel,
             value = formattedValue,
