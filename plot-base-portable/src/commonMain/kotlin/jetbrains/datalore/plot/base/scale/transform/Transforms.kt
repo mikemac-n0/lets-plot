@@ -20,13 +20,14 @@ object Transforms {
 
     fun createBreaksGeneratorForTransformedDomain(
         transform: ContinuousTransform,
-        labelFormatter: ((Any) -> String)? = null
+        labelFormatter: ((Any) -> String)? = null,
+        valueFormatter: ((Any) -> String)? = null
     ): BreaksGenerator {
         val breaksGenerator: BreaksGenerator = when (transform) {
-            IDENTITY -> LinearBreaksGen(labelFormatter)
-            REVERSE -> LinearBreaksGen(labelFormatter)
-            SQRT -> NonlinearBreaksGen(SQRT, labelFormatter)
-            LOG10 -> NonlinearBreaksGen(LOG10, labelFormatter)
+            IDENTITY -> LinearBreaksGen(labelFormatter, valueFormatter)
+            REVERSE -> LinearBreaksGen(labelFormatter, valueFormatter)
+            SQRT -> NonlinearBreaksGen(SQRT, labelFormatter, valueFormatter)
+            LOG10 -> NonlinearBreaksGen(LOG10, labelFormatter, valueFormatter)
             else -> throw IllegalStateException("Unexpected 'transform' type: ${transform::class.simpleName}")
         }
 

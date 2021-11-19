@@ -6,7 +6,6 @@
 package jetbrains.datalore.plot.config
 
 import jetbrains.datalore.base.stringFormat.StringFormat
-import jetbrains.datalore.base.stringFormat.StringFormat.FormatType.DATETIME_FORMAT
 import jetbrains.datalore.base.values.Color
 import jetbrains.datalore.plot.base.Aes
 import jetbrains.datalore.plot.base.scale.Mappers.nullable
@@ -163,11 +162,17 @@ class ScaleConfig<T>(options: Map<String, Any>) : OptionsAccessor(options) {
         b.discreteDomainReverse(reverse)
 
         if (getBoolean(Option.Scale.DATE_TIME)) {
-            val dateTimeFormatter = getString(FORMAT)?.let { pattern ->
-                val stringFormat = StringFormat.forOneArg(pattern, type = DATETIME_FORMAT, formatFor = "date-time scale")
-                return@let { value: Any -> stringFormat.format(value) }
+            val dateTimeFormatter = getString(FORMAT)?.let { format ->
+                val pattern = StringFormat.splitFormatter(format)
+                val stringFormatter = pattern.string?.let {
+                    { value: Any -> StringFormat.forOneArg(it).format(value) }
+                }
+                val valueFormatter = pattern.value?.let {
+                    { value: Any -> StringFormat.forOneArg(it).format(value) }
+                }
+                return@let Pair(stringFormatter, valueFormatter)
             }
-            b.breaksGenerator(DateTimeBreaksGen(dateTimeFormatter))
+            b.breaksGenerator(DateTimeBreaksGen(dateTimeFormatter?.first, dateTimeFormatter?.second))
         } else if (!discreteDomain && has(Option.Scale.CONTINUOUS_TRANSFORM)) {
             val transformName = getStringSafe(Option.Scale.CONTINUOUS_TRANSFORM)
             val transform = when (transformName.lowercase()) {

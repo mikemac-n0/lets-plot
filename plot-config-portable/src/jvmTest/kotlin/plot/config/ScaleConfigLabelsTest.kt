@@ -11,6 +11,7 @@ import jetbrains.datalore.base.gcommon.collect.ClosedRange
 import jetbrains.datalore.plot.base.Aes
 import jetbrains.datalore.plot.base.Scale
 import jetbrains.datalore.plot.builder.layout.axis.AxisBreaksProviderFactory
+import jetbrains.datalore.plot.common.time.TimeUtil
 import jetbrains.datalore.plot.config.Option.Scale.BREAKS
 import jetbrains.datalore.plot.config.Option.Scale.CONTINUOUS_TRANSFORM
 import jetbrains.datalore.plot.config.Option.Scale.DATE_TIME
@@ -165,12 +166,12 @@ class ScaleConfigLabelsTest {
 
     @Test
     fun datetime() {
-        val instant = TimeZone.UTC.toInstant(
+        val instant = TimeUtil.asInstantUTC(
             DateTime(
                 Date(1, Month.JANUARY, 2021),
                 Time(10, 10)
             )
-        ).timeSinceEpoch.toDouble()
+        ).toDouble()
 
         val scaleMap = getScaleMap(
             data = mapOf(
@@ -186,7 +187,7 @@ class ScaleConfigLabelsTest {
                 mapOf(
                     Option.Scale.AES to Aes.Y.name,
                     DATE_TIME to true,
-                    FORMAT to "%B %Y"
+                    FORMAT to "in {%B %Y}"
                 )
             )
         )
@@ -203,14 +204,14 @@ class ScaleConfigLabelsTest {
             targetCount = 1,
             closeRange = ClosedRange(instant, instant)
         )
-        assertEquals(listOf("January 2021"), yLabels)
+        assertEquals(listOf("in January 2021"), yLabels)
     }
 
     @Test
     fun `DateTime format should be applied to the breaks`() {
         val instants = List(3) {
             DateTime(Date(1, Month.JANUARY, 2021)).add(Duration.DAY.mul(it.toLong()))
-        }.map { TimeZone.UTC.toInstant(it).timeSinceEpoch.toDouble() }
+        }.map { TimeUtil.asInstantUTC(it).toDouble() }
 
         val scaleMap = getScaleMap(
             data = mapOf(
@@ -257,6 +258,29 @@ class ScaleConfigLabelsTest {
 
         val labels = scaleMap[Aes.COLOR].getScaleBreaks().labels
         assertEquals(listOf("is red", "is green", "is blue"), labels)
+    }
+
+    @Test
+    fun `value formatter inside the string formatter`() {
+        val scaleMap = getScaleMap(
+            data,
+            mappingXY,
+            scales = listOf(
+                mapOf(
+                    Option.Scale.AES to Aes.X.name,
+                    FORMAT to "default = {}"
+                ),
+                mapOf(
+                    Option.Scale.AES to Aes.Y.name,
+                    FORMAT to "user = {.3f}"
+                )
+            )
+        )
+        val xLabels = getScaleLabels(scaleMap[Aes.X])
+        val yLabels = getScaleLabels(scaleMap[Aes.Y])
+
+        assertEquals(listOf("default = -0.4", "default = -0.2", "default = 0.0", "default = 0.2", "default = 0.4"), xLabels)
+        assertEquals(listOf("user = -0.400", "user = -0.200", "user = 0.000", "user = 0.200", "user = 0.400"), yLabels)
     }
 
     companion object {

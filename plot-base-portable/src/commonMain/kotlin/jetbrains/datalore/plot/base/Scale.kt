@@ -25,6 +25,7 @@ interface Scale<T> {
     val name: String
 
     val labelFormatter: ((Any) -> String)?
+    val valueFormatter: ((Any) -> String)?
 
     /**
      * @return TRUE if both, domain and range are continuous
@@ -77,6 +78,8 @@ interface Scale<T> {
         fun labels(l: List<String>): Builder<T>
 
         fun labelFormatter(v: (Any) -> String): Builder<T>
+
+        fun valueFormatter(v: (Any) -> String): Builder<T>
 
         fun mapper(m: (Double?) -> T?): Builder<T>
 

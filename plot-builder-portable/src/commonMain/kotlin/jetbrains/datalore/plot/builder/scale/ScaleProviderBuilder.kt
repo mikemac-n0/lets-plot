@@ -281,7 +281,13 @@ class ScaleProviderBuilder<T>(private val aes: Aes<T>) {
                 with.labels(myLabels)
             }
             if (myLabelFormat != null) {
-                with.labelFormatter(StringFormat.forOneArg(myLabelFormat, formatFor = "${myAes.name.uppercase()}")::format)
+                val pattern = StringFormat.splitFormatter(myLabelFormat)
+                if (pattern.value != null) {
+                    with.valueFormatter(StringFormat.forOneArg(pattern.value!!)::format)
+                }
+                if (pattern.string != null) {
+                    with.labelFormatter(StringFormat.forOneArg(pattern.string!!)::format)
+                }
             }
             if (myMultiplicativeExpand != null) {
                 with.multiplicativeExpand(myMultiplicativeExpand)

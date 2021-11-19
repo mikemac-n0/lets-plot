@@ -16,18 +16,17 @@ import kotlin.math.min
 
 internal class NonlinearBreaksGen(
     private val transform: ContinuousTransform,
-    private val formatter: ((Any) -> String)? = null
+    private val formatter: ((Any) -> String)? = null,
+    private val valueFormatter: ((Any) -> String)? = null
 ) : BreaksGenerator {
 
     override fun generateBreaks(domain: ClosedRange<Double>, targetCount: Int): ScaleBreaks {
         val breakValues = generateBreakValues(domain, targetCount, transform)
-        val breakFormatters = if (formatter != null) {
-            List(breakValues.size) { formatter }
-        } else {
-            createFormatters(breakValues)
+        val defaultFormatters = createFormatters(breakValues)
+        val labels = breakValues.mapIndexed { i, v ->
+            val value = valueFormatter?.invoke(v) ?: defaultFormatters[i](v)
+            formatter?.invoke(value) ?: value
         }
-
-        val labels = breakValues.mapIndexed { i, v -> breakFormatters[i](v) }
         return ScaleBreaks(breakValues, breakValues, labels)
     }
 

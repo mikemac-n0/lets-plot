@@ -42,24 +42,17 @@ class MappingValue(
         }
 
         if (format != null) {
-            // detach the default format from the pattern - inside curly braces: ".. {default_pattern} .."
-            val formatInsideBraces = StringFormat.detachEnclosedInBraces(format)
-            when {
-                formatInsideBraces.size == 1 && formatInsideBraces.single().isNotEmpty() -> {
-                    // "{pattern}" -> 'pattern' as default formatter, the result will be used by the user formatter
-                    val defaultFormat = formatInsideBraces.single()
-                    myDefaultValueFormatter = StringFormat.forOneArg(defaultFormat)::format
-                    myFormatter = StringFormat.forOneArg(format.replace(defaultFormat, ""), formatFor = aes.name)::format
-                }
-                formatInsideBraces.size == 1 -> {
-                    // "{}" -> use the default scale formatter to format original value
-                    myDefaultValueFormatter = myDataAccess.getScaleDefaultFormatter(aes)
-                    myFormatter = StringFormat.forOneArg(format, formatFor = aes.name)::format
-                }
-                else -> {
-                    myDefaultValueFormatter = null
-                    myFormatter = StringFormat.forOneArg(format, formatFor = aes.name)::format
-                }
+            // detach the default format from the pattern - inside curly braces: ".. {pattern} .."
+            val pattern = StringFormat.splitFormatter(format)
+            myDefaultValueFormatter = if (pattern.value != null) {
+                StringFormat.forOneArg(pattern.value!!)::format
+            } else {
+                myDataAccess.getScaleDefaultFormatter(aes)
+            }
+            myFormatter = if (pattern.string != null) {
+                StringFormat.forOneArg(pattern.string!!, formatFor = aes.name)::format
+            } else {
+                StringFormat.forOneArg("{}", formatFor = aes.name)::format
             }
         } else {
             myFormatter = myDataAccess.getScaleDefaultFormatter(aes)

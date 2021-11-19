@@ -166,5 +166,29 @@ class StringFormat private constructor(
                 }
             }
         }
+
+        class PatternParts(val value: String?, val string: String?)
+        fun splitFormatter(pattern: String): PatternParts {
+            var stringPattern: String? = null
+            var valuePattern: String? = null
+            val formatInsideBraces = detachEnclosedInBraces(pattern)
+            when {
+                formatInsideBraces.size == 1 && formatInsideBraces.single().isNotEmpty() -> {
+                    // ".. {pattern} .." ->
+                    //     'pattern' for value formatter, the result will be used by the string formatter ".. {} .."
+                    valuePattern = formatInsideBraces.single()
+                    stringPattern = pattern.replace(valuePattern, "")
+                }
+                formatInsideBraces.isEmpty() -> {
+                    // use "pattern" to format original value
+                    valuePattern = pattern
+                }
+                else -> {
+                    // use "pattern" for string formatter
+                    stringPattern = pattern
+                }
+            }
+            return PatternParts(valuePattern, stringPattern)
+        }
     }
 }

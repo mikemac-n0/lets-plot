@@ -20,6 +20,7 @@ internal abstract class AbstractScale<DomainT, T> : Scale<T> {
     final override var additiveExpand = 0.0
         protected set
     final override val labelFormatter: ((Any) -> String)?
+    final override val valueFormatter: ((Any) -> String)?
 
     override val isContinuous: Boolean
         get() = false
@@ -33,6 +34,7 @@ internal abstract class AbstractScale<DomainT, T> : Scale<T> {
         this.definedBreaks = breaks
         definedLabels = null
         labelFormatter = null
+        valueFormatter = null
     }
 
     protected constructor(b: AbstractBuilder<DomainT, T>) {
@@ -40,6 +42,7 @@ internal abstract class AbstractScale<DomainT, T> : Scale<T> {
         definedBreaks = b.myBreaks
         definedLabels = b.myLabels
         labelFormatter = b.myLabelFormatter
+        valueFormatter = b.myValueFormatter
         mapper = b.myMapper
 
         multiplicativeExpand = b.myMultiplicativeExpand
@@ -115,7 +118,10 @@ internal abstract class AbstractScale<DomainT, T> : Scale<T> {
 
         // generate labels
         val formatter: (Any) -> String = labelFormatter ?: { v: Any -> v.toString() }
-        return breaks.map { formatter(it) }
+        return breaks.map {
+            val value = valueFormatter?.invoke(it) ?: it
+            formatter(value)
+        }
     }
 
     protected abstract class AbstractBuilder<DomainT, T>(scale: AbstractScale<DomainT, T>) : Scale.Builder<T> {
@@ -124,6 +130,7 @@ internal abstract class AbstractScale<DomainT, T> : Scale<T> {
         internal var myBreaks: List<DomainT>? = scale.definedBreaks
         internal var myLabels: List<String>? = scale.definedLabels
         internal var myLabelFormatter: ((Any) -> String)? = scale.labelFormatter
+        internal var myValueFormatter: ((Any) -> String)? = scale.valueFormatter
         internal var myMapper: (Double?) -> T? = scale.mapper
 
         internal var myMultiplicativeExpand: Double = scale.multiplicativeExpand
@@ -144,6 +151,11 @@ internal abstract class AbstractScale<DomainT, T> : Scale<T> {
 
         override fun labelFormatter(v: (Any) -> String): Scale.Builder<T> {
             myLabelFormatter = v
+            return this
+        }
+
+        override fun valueFormatter(v: (Any) -> String): Scale.Builder<T> {
+            myValueFormatter = v
             return this
         }
 
