@@ -50,7 +50,7 @@ class MappedDataAccessMock {
     class Mapping<T> internal constructor(
         internal val aes: Aes<T>,
         internal val label: String,
-        internal val value: String,
+        internal val value: String
     ) {
         fun longTooltipText(): String {
             return "$label: $value"
