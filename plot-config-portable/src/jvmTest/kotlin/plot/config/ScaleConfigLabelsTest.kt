@@ -6,7 +6,6 @@
 package jetbrains.datalore.plot.config
 
 import jetbrains.datalore.base.datetime.*
-import jetbrains.datalore.base.datetime.tz.TimeZone
 import jetbrains.datalore.base.gcommon.collect.ClosedRange
 import jetbrains.datalore.plot.base.Aes
 import jetbrains.datalore.plot.base.Scale
@@ -65,6 +64,7 @@ class ScaleConfigLabelsTest {
     @Test
     fun `set format for labels of the log scale`() {
         run {
+            //default
             val scaleMap = getScaleMap(
                 data,
                 mappingXY,

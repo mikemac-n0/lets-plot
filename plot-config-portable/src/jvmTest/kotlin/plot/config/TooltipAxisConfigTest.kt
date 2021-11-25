@@ -58,7 +58,6 @@ class TooltipAxisConfigTest {
         return TestUtil.buildPointLayer(data, mapping, tooltips = tooltipConfig, scales = listOf(scales))
     }
 
-
     @Test
     fun default() {
         val geomLayer = geomLayer(scaleFormat = null, tooltipFormat = null)
