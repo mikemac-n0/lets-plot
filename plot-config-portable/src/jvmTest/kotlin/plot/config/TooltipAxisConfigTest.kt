@@ -23,18 +23,45 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class TooltipAxisConfigTest {
-    private val data = mapOf("v" to listOf(0.34447))
-    private val mapping = mapOf(
+    private val myData = mapOf("v" to listOf(0.34447))
+    private val myMapping = mapOf(
         Aes.X.name to "v",
         Aes.Y.name to "v"
     )
-    private val aesYInGeneralTooltip = TOOLTIP_LINES to listOf("^y")
 
-    // ggplot(data) + geom_point(aes('v','v'), tooltips = layer_tooltips().line('^y'))
+    // ggplot(data) + geom_point(aes('v','v'), tooltips = layer_tooltips().line('^y').format(...)) + scale_y_*(format=...)
+    private fun geomLayer(
+        data: Map<String, Any?> = myData,
+        mapping: Map<String, Any> = myMapping,
+        additionalScaleOption: Pair<String, Any>? = null,
+        scaleFormat: String?,
+        tooltipFormat: String?,
+        useVarNameInTooltip: Boolean = false,
+        useTooltipFormatForVarName: Boolean = false
+    ): GeomLayer {
+        val scales = listOfNotNull(
+            Scale.AES to Aes.Y.name,
+            scaleFormat?.let { format -> Scale.FORMAT to format },
+            additionalScaleOption
+        ).toMap()
+        val tooltipConfig = listOfNotNull(
+            TOOLTIP_LINES to listOf(if (useVarNameInTooltip) "@v" else "^y"),
+            tooltipFormat?.let { format ->
+                TOOLTIP_FORMATS to listOf(
+                    mapOf(
+                        FIELD to if (useTooltipFormatForVarName) "v" else "^y",
+                        FORMAT to format
+                    )
+                )
+            }
+        ).toMap()
+        return TestUtil.buildPointLayer(data, mapping, tooltips = tooltipConfig, scales = listOf(scales))
+    }
+
 
     @Test
     fun default() {
-        val geomLayer = TestUtil.buildPointLayer(data, mapping, tooltips = mapOf(aesYInGeneralTooltip))
+        val geomLayer = geomLayer(scaleFormat = null, tooltipFormat = null)
         assertGeneralTooltip(geomLayer, "0.34")
         assertYAxisTooltip(geomLayer, "0.34")
         assertEquals("0.3", getYTick(geomLayer))
@@ -43,29 +70,13 @@ class TooltipAxisConfigTest {
     @Test
     fun `scale format does not apply to tooltips`() {
         run {
-            val scales = listOf(
-                mapOf(
-                    Scale.AES to Aes.Y.name,
-                    Scale.DISCRETE_DOMAIN to false,
-                    Scale.FORMAT to "scale = {} %"
-                )
-            )
-            val geomLayer =
-                TestUtil.buildPointLayer(data, mapping, tooltips = mapOf(aesYInGeneralTooltip), scales = scales)
+            val geomLayer = geomLayer(scaleFormat = "scale = {} %", tooltipFormat = null)
             assertGeneralTooltip(geomLayer, "0.34")
             assertYAxisTooltip(geomLayer, "0.34")
             assertEquals("scale = 0.3 %", getYTick(geomLayer))
         }
         run {
-            val scales = listOf(
-                mapOf(
-                    Scale.AES to Aes.Y.name,
-                    Scale.DISCRETE_DOMAIN to false,
-                    Scale.FORMAT to "scale = {.3f} %"
-                )
-            )
-            val geomLayer =
-                TestUtil.buildPointLayer(data, mapping, tooltips = mapOf(aesYInGeneralTooltip), scales = scales)
+            val geomLayer = geomLayer(scaleFormat = "scale = {.3f} %", tooltipFormat = null)
             assertGeneralTooltip(geomLayer, "0.34")
             assertYAxisTooltip(geomLayer, "0.34")
             assertEquals("scale = 0.300 %", getYTick(geomLayer))
@@ -75,65 +86,55 @@ class TooltipAxisConfigTest {
     @Test
     fun `scale_y_discrete(format)`() {
         run {
-            val scales = listOf(
-                mapOf(
-                    Scale.AES to Aes.Y.name,
-                    Scale.DISCRETE_DOMAIN to true,
-                    Scale.FORMAT to "scale = {} %"
-                )
+            val geomLayer = geomLayer(
+                additionalScaleOption = Scale.DISCRETE_DOMAIN to true,
+                scaleFormat = "scale = {} %",
+                tooltipFormat = null
             )
-            val geomLayer =
-                TestUtil.buildPointLayer(data, mapping, tooltips = mapOf(aesYInGeneralTooltip), scales = scales)
             assertGeneralTooltip(geomLayer, "scale = 0.34447 %")
             assertYAxisTooltip(geomLayer, "scale = 0.34447 %")
             assertEquals("scale = 0.34447 %", getYTick(geomLayer))
         }
         run {
-            val scales = listOf(
-                mapOf(
-                    Scale.AES to Aes.Y.name,
-                    Scale.DISCRETE_DOMAIN to true,
-                    Scale.FORMAT to "scale = {.4f} %"
-                )
+            val geomLayer = geomLayer(
+                additionalScaleOption = Scale.DISCRETE_DOMAIN to true,
+                scaleFormat = "scale = {.4f} %",
+                tooltipFormat = null
             )
-            val geomLayer =
-                TestUtil.buildPointLayer(data, mapping, tooltips = mapOf(aesYInGeneralTooltip), scales = scales)
             assertGeneralTooltip(geomLayer, "scale = 0.3445 %")
             assertYAxisTooltip(geomLayer, "scale = 0.3445 %")
             assertEquals("scale = 0.3445 %", getYTick(geomLayer))
+        }
+        run {
+            val geomLayer = geomLayer(
+                additionalScaleOption = Scale.DISCRETE_DOMAIN to true,
+                scaleFormat = ".4f",
+                tooltipFormat = null
+            )
+            assertGeneralTooltip(geomLayer, "0.3445")
+            assertYAxisTooltip(geomLayer, "0.3445")
+            assertEquals("0.3445", getYTick(geomLayer))
         }
     }
 
     @Test
     fun `tooltip format for the 'y'`() {
         run {
-            val tooltipConfig = mapOf(
-                aesYInGeneralTooltip,
-                TOOLTIP_FORMATS to listOf(
-                    mapOf(
-                        FIELD to "^y",
-                        FORMAT to "tooltip = {} %"
-                    )
-                )
-            )
-            val geomLayer = TestUtil.buildPointLayer(data, mapping, tooltips = tooltipConfig)
+            val geomLayer = geomLayer(scaleFormat = null, tooltipFormat = "tooltip = {} %")
             assertGeneralTooltip(geomLayer, "tooltip = 0.34 %")
             assertYAxisTooltip(geomLayer, "tooltip = 0.34 %")
             assertEquals("0.3", getYTick(geomLayer))
         }
         run {
-            val tooltipConfig = mapOf(
-                aesYInGeneralTooltip,
-                TOOLTIP_FORMATS to listOf(
-                    mapOf(
-                        FIELD to "^y",
-                        FORMAT to "tooltip = {.4f} %"
-                    )
-                )
-            )
-            val geomLayer = TestUtil.buildPointLayer(data, mapping, tooltips = tooltipConfig)
+            val geomLayer = geomLayer(scaleFormat = null, tooltipFormat = "tooltip = {.4f} %")
             assertGeneralTooltip(geomLayer, "tooltip = 0.3445 %")
             assertYAxisTooltip(geomLayer, "tooltip = 0.3445 %")
+            assertEquals("0.3", getYTick(geomLayer))
+        }
+        run {
+            val geomLayer = geomLayer(scaleFormat = null, tooltipFormat = ".4f")
+            assertGeneralTooltip(geomLayer, "0.3445")
+            assertYAxisTooltip(geomLayer, "0.3445")
             assertEquals("0.3", getYTick(geomLayer))
         }
     }
@@ -141,67 +142,19 @@ class TooltipAxisConfigTest {
     @Test
     fun `scale(format) + tooltip format() - the tooltip formatting is applied to the axis tooltip`() {
         run {
-            val tooltipConfig = mapOf(
-                aesYInGeneralTooltip,
-                TOOLTIP_FORMATS to listOf(
-                    mapOf(
-                        FIELD to "^y",
-                        FORMAT to "tooltip = {} %"
-                    )
-                )
-            )
-            val scales = listOf(
-                mapOf(
-                    Scale.AES to Aes.Y.name,
-                    Scale.DISCRETE_DOMAIN to false,
-                    Scale.FORMAT to "scale = {} %"
-                )
-            )
-            val geomLayer = TestUtil.buildPointLayer(data, mapping, tooltips = tooltipConfig, scales = scales)
+            val geomLayer = geomLayer(scaleFormat = "scale = {} %", tooltipFormat = "tooltip = {} %")
             assertGeneralTooltip(geomLayer, "tooltip = 0.34 %")
             assertYAxisTooltip(geomLayer, "tooltip = 0.34 %")
             assertEquals("scale = 0.3 %", getYTick(geomLayer))
         }
         run {
-            val tooltipConfig = mapOf(
-                aesYInGeneralTooltip,
-                TOOLTIP_FORMATS to listOf(
-                    mapOf(
-                        FIELD to "^y",
-                        FORMAT to "tooltip = {.4f} %"
-                    )
-                )
-            )
-            val scales = listOf(
-                mapOf(
-                    Scale.AES to Aes.Y.name,
-                    Scale.DISCRETE_DOMAIN to false,
-                    Scale.FORMAT to "scale = {.3f} %"
-                )
-            )
-            val geomLayer = TestUtil.buildPointLayer(data, mapping, tooltips = tooltipConfig, scales = scales)
+            val geomLayer = geomLayer(scaleFormat = "scale = {.3f} %", tooltipFormat = "tooltip = {.4f} %")
             assertGeneralTooltip(geomLayer, "tooltip = 0.3445 %")
             assertYAxisTooltip(geomLayer, "tooltip = 0.3445 %")
             assertEquals("scale = 0.300 %", getYTick(geomLayer))
         }
         run {
-            val tooltipConfig = mapOf(
-                aesYInGeneralTooltip,
-                TOOLTIP_FORMATS to listOf(
-                    mapOf(
-                        FIELD to "^y",
-                        FORMAT to ".4f"
-                    )
-                )
-            )
-            val scales = listOf(
-                mapOf(
-                    Scale.AES to Aes.Y.name,
-                    Scale.DISCRETE_DOMAIN to false,
-                    Scale.FORMAT to ".3f"
-                )
-            )
-            val geomLayer = TestUtil.buildPointLayer(data, mapping, tooltips = tooltipConfig, scales = scales)
+            val geomLayer = geomLayer(scaleFormat = ".3f", tooltipFormat = ".4f")
             assertGeneralTooltip(geomLayer, "0.3445")
             assertYAxisTooltip(geomLayer, "0.3445")
             assertEquals("0.300", getYTick(geomLayer))
@@ -211,46 +164,27 @@ class TooltipAxisConfigTest {
     @Test
     fun `tooltip format() for the variable`() {
         run {
-            val tooltipConfig = mapOf(
-                aesYInGeneralTooltip,
-                TOOLTIP_FORMATS to listOf(
-                    mapOf(
-                        FIELD to "@v",
-                        FORMAT to "tooltip = {} %"
-                    )
-                )
-            )
-            val geomLayer = TestUtil.buildPointLayer(data, mapping, tooltips = tooltipConfig)
+            val geomLayer =
+                geomLayer(scaleFormat = null, tooltipFormat = "tooltip = {} %", useTooltipFormatForVarName = true)
             assertGeneralTooltip(geomLayer, "tooltip = 0.34 %")
             assertYAxisTooltip(geomLayer, "tooltip = 0.34 %")
             assertEquals("0.3", getYTick(geomLayer))
         }
         run {
-            val tooltipConfig = mapOf(
-                aesYInGeneralTooltip,
-                TOOLTIP_FORMATS to listOf(
-                    mapOf(
-                        FIELD to "@v",
-                        FORMAT to "tooltip = {.4f} %"
-                    )
-                )
-            )
-            val geomLayer = TestUtil.buildPointLayer(data, mapping, tooltips = tooltipConfig)
+            val geomLayer =
+                geomLayer(scaleFormat = null, tooltipFormat = "tooltip = {.4f} %", useTooltipFormatForVarName = true)
             assertGeneralTooltip(geomLayer, "tooltip = 0.3445 %")
             assertYAxisTooltip(geomLayer, "tooltip = 0.3445 %")
             assertEquals("0.3", getYTick(geomLayer))
         }
         run {
-            val tooltipConfig = mapOf(
-                TOOLTIP_LINES to listOf("@v"),     // as variable
-                TOOLTIP_FORMATS to listOf(
-                    mapOf(
-                        FIELD to "@v",
-                        FORMAT to "tooltip = {} %"
-                    )
-                )
+            // add variable to tooltip line
+            val geomLayer = geomLayer(
+                scaleFormat = null,
+                tooltipFormat = "tooltip = {} %",
+                useVarNameInTooltip = true,
+                useTooltipFormatForVarName = true
             )
-            val geomLayer = TestUtil.buildPointLayer(data, mapping, tooltips = tooltipConfig)
             assertGeneralTooltip(geomLayer, "tooltip = 0.34447 %")
             assertYAxisTooltip(geomLayer, "tooltip = 0.34 %")
             assertEquals("0.3", getYTick(geomLayer))
@@ -259,86 +193,34 @@ class TooltipAxisConfigTest {
 
     @Test
     fun log10() {
+        fun log10(scaleFormat: String?, tooltipFormat: String?) = geomLayer(
+            additionalScaleOption = Scale.CONTINUOUS_TRANSFORM to "log10",
+            scaleFormat = scaleFormat,
+            tooltipFormat = tooltipFormat
+        )
+
         val closedRange = ClosedRange(-0.5, -0.5)
+
         run {
-            // default
-            val scales = listOf(
-                mapOf(
-                    Scale.AES to Aes.Y.name,
-                    Scale.CONTINUOUS_TRANSFORM to "log10"
-                )
-            )
-            val geomLayer =
-                TestUtil.buildPointLayer(data, mapping, tooltips = mapOf(aesYInGeneralTooltip), scales = scales)
+            val geomLayer = log10(scaleFormat = null, tooltipFormat = null)
             assertGeneralTooltip(geomLayer, "0.344")
             assertYAxisTooltip(geomLayer, "0.344")
             assertEquals("0.32", getYTick(geomLayer, closedRange))
         }
         run {
-            val scales = listOf(
-                mapOf(
-                    Scale.AES to Aes.Y.name,
-                    Scale.CONTINUOUS_TRANSFORM to "log10",
-                    Scale.FORMAT to "scale = {} %"
-                )
-            )
-            val tooltipConfig = mapOf(
-                aesYInGeneralTooltip,
-                TOOLTIP_FORMATS to listOf(
-                    mapOf(
-                        FIELD to "^y",
-                        FORMAT to "tooltip = {} %"
-                    )
-                )
-            )
-            val geomLayer =
-                TestUtil.buildPointLayer(data, mapping, tooltips = tooltipConfig, scales = scales)
+            val geomLayer = log10(scaleFormat = "scale = {} %", tooltipFormat = "tooltip = {} %")
             assertGeneralTooltip(geomLayer, "tooltip = 0.344 %")
             assertYAxisTooltip(geomLayer, "tooltip = 0.344 %")
             assertEquals("scale = 0.32 %", getYTick(geomLayer, closedRange))
         }
         run {
-            val scales = listOf(
-                mapOf(
-                    Scale.AES to Aes.Y.name,
-                    Scale.CONTINUOUS_TRANSFORM to "log10",
-                    Scale.FORMAT to "scale = {.3f} %"
-                )
-            )
-            val tooltipConfig = mapOf(
-                aesYInGeneralTooltip,
-                TOOLTIP_FORMATS to listOf(
-                    mapOf(
-                        FIELD to "^y",
-                        FORMAT to "tooltip = {.4f} %"
-                    )
-                )
-            )
-            val geomLayer =
-                TestUtil.buildPointLayer(data, mapping, tooltips = tooltipConfig, scales = scales)
+            val geomLayer = log10(scaleFormat = "scale = {.3f} %", tooltipFormat = "tooltip = {.4f} %")
             assertGeneralTooltip(geomLayer, "tooltip = 0.3445 %")
             assertYAxisTooltip(geomLayer, "tooltip = 0.3445 %")
             assertEquals("scale = 0.316 %", getYTick(geomLayer, closedRange))
         }
         run {
-            val scales = listOf(
-                mapOf(
-                    Scale.AES to Aes.Y.name,
-                    Scale.CONTINUOUS_TRANSFORM to "log10",
-                    Scale.FORMAT to ".3f"
-                )
-            )
-            val tooltipConfig = mapOf(
-                aesYInGeneralTooltip,
-                TOOLTIP_FORMATS to listOf(
-                    mapOf(
-                        FIELD to "^y",
-                        FORMAT to ".4f"
-                    )
-                )
-            )
-            val geomLayer =
-                TestUtil.buildPointLayer(data, mapping, tooltips = tooltipConfig, scales = scales)
+            val geomLayer = log10(scaleFormat = ".3f", tooltipFormat = ".4f")
             assertGeneralTooltip(geomLayer, "0.3445")
             assertYAxisTooltip(geomLayer, "0.3445")
             assertEquals("0.316", getYTick(geomLayer, closedRange))
@@ -350,91 +232,41 @@ class TooltipAxisConfigTest {
         val instants = List(3) {
             DateTime(Date(1, Month.JANUARY, 2021)).add(Duration.WEEK.mul(it.toLong()))
         }.map { TimeUtil.asInstantUTC(it).toDouble() }
-        val closedRange = ClosedRange(instants.first(), instants.last())
-        val dt = mapOf("date" to instants, "v" to listOf(0, 1, 2))
+        val dtData = mapOf("date" to instants, "v" to listOf(0, 1, 2))
         val dtMapping = mapOf(
             Aes.X.name to "v",
             Aes.Y.name to "date"
         )
+        val closedRange = ClosedRange(instants.first(), instants.last())
+
+        fun dtLayer(scaleFormat: String?, tooltipFormat: String?): GeomLayer = geomLayer(
+            dtData,
+            dtMapping,
+            additionalScaleOption = Scale.DATE_TIME to true,
+            scaleFormat = scaleFormat,
+            tooltipFormat = tooltipFormat
+        )
 
         run {
-            val scales = listOf(
-                mapOf(
-                    Scale.AES to Aes.Y.name,
-                    Scale.DATE_TIME to true
-                )
-            )
-            val geomLayer =
-                TestUtil.buildPointLayer(dt, dtMapping, tooltips = mapOf(aesYInGeneralTooltip), scales = scales)
+            val geomLayer = dtLayer(scaleFormat = null, tooltipFormat = null)
             assertGeneralTooltip(geomLayer, "00:00")
             assertYAxisTooltip(geomLayer, "00:00")
             assertEquals("Jan 7", getYTick(geomLayer, closedRange))
         }
         run {
-            val tooltipConfig = mapOf(
-                aesYInGeneralTooltip,
-                TOOLTIP_FORMATS to listOf(
-                    mapOf(
-                        FIELD to "^y",
-                        FORMAT to "%b %Y"
-                    )
-                )
-            )
-            val scales = listOf(
-                mapOf(
-                    Scale.AES to Aes.Y.name,
-                    Scale.DATE_TIME to true,
-                    Scale.FORMAT to "%b %Y"
-                )
-            )
-            val geomLayer = TestUtil.buildPointLayer(dt, dtMapping, tooltips = tooltipConfig, scales = scales)
+            val geomLayer = dtLayer(scaleFormat = "%b %Y", tooltipFormat = "%b %Y")
             assertGeneralTooltip(geomLayer, "Jan 2021")
             assertYAxisTooltip(geomLayer, "Jan 2021")
             assertEquals("Jan 2021", getYTick(geomLayer, closedRange))
         }
         run {
-            val tooltipConfig = mapOf(
-                aesYInGeneralTooltip,
-                TOOLTIP_FORMATS to listOf(
-                    mapOf(
-                        FIELD to "^y",
-                        FORMAT to "tooltip = {}"
-                    )
-                )
-            )
-            val scales = listOf(
-                mapOf(
-                    Scale.AES to Aes.Y.name,
-                    Scale.DATE_TIME to true,
-                    Scale.FORMAT to "scale = {}"
-                )
-            )
-            val geomLayer =
-                TestUtil.buildPointLayer(dt, dtMapping, tooltips = tooltipConfig, scales = scales)
+            val geomLayer = dtLayer(scaleFormat = "scale = {}", tooltipFormat = "tooltip = {}")
             assertGeneralTooltip(geomLayer, "tooltip = 00:00")
             assertYAxisTooltip(geomLayer, "tooltip = 00:00")
             assertEquals("scale = Jan 7", getYTick(geomLayer, closedRange))
         }
         run {
-            val tooltipConfig = mapOf(
-                aesYInGeneralTooltip,
-                TOOLTIP_FORMATS to listOf(
-                    mapOf(
-                        FIELD to "^y",
-                        FORMAT to "tooltip = {%b %Y}"
-                    )
-                )
-            )
-            val scales = listOf(
-                mapOf(
-                    Scale.AES to Aes.Y.name,
-                    Scale.DATE_TIME to true,
-                    Scale.FORMAT to "scale = {%b %Y}"
-                )
-            )
-            val geomLayer =
-                TestUtil.buildPointLayer(dt, dtMapping, tooltips = tooltipConfig, scales = scales)
-
+            val geomLayer = dtLayer(scaleFormat = "scale = {%b %Y}", tooltipFormat = "tooltip = {%b %Y}")
             assertGeneralTooltip(geomLayer, "tooltip = Jan 2021")
             assertYAxisTooltip(geomLayer, "tooltip = Jan 2021")
             assertEquals("scale = Jan 2021", getYTick(geomLayer, closedRange))
