@@ -10,6 +10,7 @@ import jetbrains.datalore.base.values.Color
 import jetbrains.datalore.plot.base.Aes
 import jetbrains.datalore.plot.base.scale.Mappers.nullable
 import jetbrains.datalore.plot.base.scale.transform.DateTimeBreaksGen
+import jetbrains.datalore.plot.base.scale.transform.TimeBreaksGen
 import jetbrains.datalore.plot.base.scale.transform.Transforms
 import jetbrains.datalore.plot.builder.scale.*
 import jetbrains.datalore.plot.builder.scale.mapper.ShapeMapper
@@ -173,6 +174,8 @@ class ScaleConfig<T>(options: Map<String, Any>) : OptionsAccessor(options) {
                 return@let Pair(stringFormatter, valueFormatter)
             }
             b.breaksGenerator(DateTimeBreaksGen(dateTimeFormatter?.first, dateTimeFormatter?.second))
+        } else if (getBoolean(Option.Scale.TIME)) {
+            b.breaksGenerator(TimeBreaksGen())
         } else if (!discreteDomain && has(Option.Scale.CONTINUOUS_TRANSFORM)) {
             val transformName = getStringSafe(Option.Scale.CONTINUOUS_TRANSFORM)
             val transform = when (transformName.lowercase()) {
