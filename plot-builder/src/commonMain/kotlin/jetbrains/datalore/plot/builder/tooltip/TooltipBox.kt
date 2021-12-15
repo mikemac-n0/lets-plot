@@ -279,7 +279,7 @@ class TooltipBox(
     }
 
     private inner class TextBox : SvgComponent() {
-        private val myLines = SvgSvgElement().apply {
+        private val myLinesContainer = SvgSvgElement().apply {
             x().set(0.0)
             y().set(0.0)
             width().set(0.0)
@@ -296,7 +296,7 @@ class TooltipBox(
 
         override fun buildComponent() {
             add(myContent)
-            myContent.children().add(myLines)
+            myContent.children().add(myLinesContainer)
         }
 
         internal fun update(
@@ -305,6 +305,8 @@ class TooltipBox(
             valueTextColor: Color,
             tooltipMinWidth: Double?
         ) {
+            myLinesContainer.children().clear()
+
             val components: List<Pair<TextLabel?, TextLabel>> = lines.map { line ->
                 Pair(
                     line.label?.let(::TextLabel),
@@ -315,13 +317,13 @@ class TooltipBox(
             components.onEach { (labelComponent, _) ->
                 if (labelComponent != null) {
                     labelComponent.textColor().set(labelTextColor)
-                    myLines.children().add(labelComponent.rootGroup)
+                    myLinesContainer.children().add(labelComponent.rootGroup)
                 }
             }
             // for values
             components.onEach { (_, valueComponent) ->
                 valueComponent.textColor().set(valueTextColor)
-                myLines.children().add(valueComponent.rootGroup)
+                myLinesContainer.children().add(valueComponent.rootGroup)
             }
 
             // bBoxes
@@ -440,7 +442,7 @@ class TooltipBox(
                 }
                 .subtract(DoubleVector(0.0, LINE_INTERVAL)) // remove LINE_INTERVAL from last line
 
-            myLines.apply {
+            myLinesContainer.apply {
                 x().set(H_CONTENT_PADDING)
                 y().set(V_CONTENT_PADDING)
                 width().set(textSize.x)
