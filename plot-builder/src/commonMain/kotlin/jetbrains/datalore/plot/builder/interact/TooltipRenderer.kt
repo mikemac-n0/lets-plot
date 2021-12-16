@@ -99,7 +99,7 @@ internal class TooltipRenderer(
                     else -> 1.0
                 }
 
-                val newTooltipStyle = spec.layoutHint.kind !in listOf(
+                val useNewPointerStyle = spec.layoutHint.kind !in listOf(
                     X_AXIS_TOOLTIP,
                     Y_AXIS_TOOLTIP
                 ) && spec.anchor == null
@@ -117,7 +117,8 @@ internal class TooltipRenderer(
                         style = spec.style,
                         //rotate = spec.layoutHint.kind == ROTATED_TOOLTIP,
                         tooltipMinWidth = spec.minWidth,
-                        pointerStyle = spec.layoutHint.pointerStyle
+                        pointerStyle = spec.layoutHint.pointerStyle,
+                        useNewPointerStyle
                     )
                 MeasuredTooltip(tooltipSpec = spec, tooltipBox = tooltipBox)
             }

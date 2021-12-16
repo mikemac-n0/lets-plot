@@ -46,7 +46,8 @@ class TooltipBoxTest {
                 strokeWidth = 1.0,
                 lines = listOf(TooltipSpec.Line.withValue(wordText)),
                 style = "anyStyle",
-                pointerStyle = null
+                pointerStyle = null,
+                useNewPointerStyle = false
             )
         }
     }
