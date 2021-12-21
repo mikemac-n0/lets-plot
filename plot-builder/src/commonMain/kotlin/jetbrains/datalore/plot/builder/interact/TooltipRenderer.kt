@@ -106,6 +106,8 @@ internal class TooltipRenderer(
                     Y_AXIS_TOOLTIP
                 ) && spec.anchor == null
 
+                val dataPointColor = if (!spec.isOutlier) spec.fill else null
+
                 tooltipBox
                     // not all tooltips will get position - overlapped axis toooltips likely won't.
                     // Hide and later show only ones with position
@@ -114,6 +116,7 @@ internal class TooltipRenderer(
                         fillColor = fillColor,
                         textColor = textColor,
                         borderColor = borderColor,
+                        dataPointColor = dataPointColor,
                         strokeWidth = strokeWidth,
                         lines = spec.lines,
                         style = spec.style,

@@ -43,6 +43,7 @@ class TooltipBoxTest {
                 fillColor = Color.BLACK,
                 textColor = Color.WHITE,
                 borderColor = Color.BLACK,
+                dataPointColor = Color.WHITE,
                 strokeWidth = 1.0,
                 lines = listOf(TooltipSpec.Line.withValue(wordText)),
                 style = "anyStyle",

@@ -24,9 +24,6 @@ import jetbrains.datalore.plot.builder.tooltip.TooltipBox.Orientation.HORIZONTAL
 import jetbrains.datalore.plot.builder.tooltip.TooltipBox.Orientation.VERTICAL
 import jetbrains.datalore.plot.builder.tooltip.TooltipBox.PointerDirection.*
 import jetbrains.datalore.vis.svg.*
-import jetbrains.datalore.vis.svg.SvgPathDataBuilder
-import jetbrains.datalore.vis.svg.SvgPathElement
-import jetbrains.datalore.vis.svg.SvgSvgElement
 import kotlin.math.max
 import kotlin.math.min
 
@@ -50,6 +47,10 @@ class TooltipBox: SvgComponent() {
 
     internal val pointerDirection get() = myPointerBox.pointerDirection // for tests
 
+    private var useNewPointerStyleForTooltip = false
+    private var addDataPointColorElement = false
+    private val leftOffsetInContentRect get() = if (addDataPointColorElement) 8.0 else 0.0
+
     override fun buildComponent() {
         add(myPointerBox)
         add(myTextBox)
@@ -59,6 +60,7 @@ class TooltipBox: SvgComponent() {
         fillColor: Color,
         textColor: Color,
         borderColor: Color,
+        dataPointColor: Color?,
         strokeWidth: Double,
         lines: List<TooltipSpec.Line>,
         style: String,
@@ -66,6 +68,9 @@ class TooltipBox: SvgComponent() {
         pointerStyle: TipLayoutHint.PointerStyle? = null,
         useNewPointerStyle: Boolean
     ) {
+        useNewPointerStyleForTooltip = useNewPointerStyle
+        addDataPointColorElement = useNewPointerStyle && dataPointColor != null
+
         addClassName(style)
         myTextBox.update(
             lines,
@@ -73,7 +78,7 @@ class TooltipBox: SvgComponent() {
             valueTextColor = textColor,
             tooltipMinWidth
         )
-        myPointerBox.updateStyle(fillColor, borderColor, strokeWidth, pointerStyle, useNewPointerStyle)
+        myPointerBox.updateStyle(fillColor, borderColor, dataPointColor, strokeWidth, pointerStyle)
     }
 
     internal fun setPosition(
@@ -94,8 +99,8 @@ class TooltipBox: SvgComponent() {
         private val myWhitePointerPath = SvgPathElement()
         private val myPointerPath = SvgPathElement()
         private val myWhiteHighlightPoint = SvgCircleElement(DoubleVector.ZERO, 0.0)
+        private val myDataPointColorRect = SvgPathElement()
 
-        private var myUseNewPointerStyle: Boolean = false
         private var myPointerStyle: TipLayoutHint.PointerStyle = TipLayoutHint.PointerStyle()
 
         override fun buildComponent() {
@@ -104,23 +109,33 @@ class TooltipBox: SvgComponent() {
             add(myWhiteHighlightPoint)
             add(myHighlightPoint)
             add(myBoxPath)
+            add(myDataPointColorRect)
         }
 
         internal fun updateStyle(
             fillColor: Color,
             borderColor: Color,
+            dataPointColor: Color?,
             strokeWidth: Double,
-            pointerStyle: TipLayoutHint.PointerStyle?,
-            useNewPointerStyle: Boolean
+            pointerStyle: TipLayoutHint.PointerStyle?
         ) {
             myBoxPath.apply {
                 strokeColor().set(borderColor)
                 strokeOpacity().set(strokeWidth)
                 fillColor().set(fillColor)
             }
+            myDataPointColorRect.apply {
+                if (addDataPointColorElement) {
+                    strokeColor().set(dataPointColor)
+                    strokeOpacity().set(1.0)
+                    strokeWidth().set(4.0)
+                    visibility().set(SvgGraphicsElement.Visibility.VISIBLE)
+                } else {
+                    visibility().set(SvgGraphicsElement.Visibility.HIDDEN)
+                }
+            }
 
-            myUseNewPointerStyle = useNewPointerStyle
-            if (myUseNewPointerStyle) {
+            if (useNewPointerStyleForTooltip) {
                 updateNewStyle(pointerStyle)
                 setPointerPathVisibility(SvgGraphicsElement.Visibility.VISIBLE)
             } else {
@@ -152,7 +167,7 @@ class TooltipBox: SvgComponent() {
 
         internal fun update(pointerCoord: DoubleVector, orientation: Orientation, stemLen: Double) {
             calcPointerDirection(pointerCoord, orientation)
-            return if (myUseNewPointerStyle) {
+            return if (useNewPointerStyleForTooltip) {
                 buildNewStyle(pointerCoord, stemLen)
             } else {
                 buildOldStyle(pointerCoord)
@@ -250,7 +265,7 @@ class TooltipBox: SvgComponent() {
             myBoxPath.apply {
                 d().set(
                     SvgPathDataBuilder().apply {
-                        val s = 3.0
+                        val s = 4.0
                         with(contentRect) {
                             moveTo(left+s, bottom)
 
@@ -282,6 +297,20 @@ class TooltipBox: SvgComponent() {
                                 DoubleVector(left+s, bottom)
                             )
                         }
+                    }.build()
+                )
+            }
+
+            myDataPointColorRect.apply {
+                val offset = 4.0
+                val leftOffset = 6.0
+                d().set(
+                    SvgPathDataBuilder().apply {
+                        with(contentRect) {
+                            moveTo(left + leftOffset, bottom - offset)
+                            lineTo(left + leftOffset, top + offset)
+                        }
+
                     }.build()
                 )
             }
@@ -355,7 +384,12 @@ class TooltipBox: SvgComponent() {
             height().set(0.0)
         }
 
-        val dimension get() = myContent.run { DoubleVector(width().get()!!, height().get()!!) }
+        val dimension get() = myContent.run {
+            DoubleVector(
+                width().get()!! + leftOffsetInContentRect,
+                height().get()!!
+            )
+        }
 
         override fun buildComponent() {
             add(myContent)
@@ -372,7 +406,7 @@ class TooltipBox: SvgComponent() {
 
             val components: List<Pair<TextLabel?, TextLabel>> = lines.map { line ->
                 Pair(
-                    line.label?.let(::TextLabel),
+                    line.label?.let(::TextLabel)?.also { if (useNewPointerStyleForTooltip) it.setFontWeight("bold") },
                     TextLabel(line.value)
                 )
             }
@@ -515,6 +549,7 @@ class TooltipBox: SvgComponent() {
             myContent.apply {
                 width().set(textSize.x + H_CONTENT_PADDING * 2)
                 height().set(textSize.y + V_CONTENT_PADDING * 2)
+                moveTo(leftOffsetInContentRect, 0.0)
             }
         }
     }
