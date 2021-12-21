@@ -90,10 +90,10 @@ class TooltipBox: SvgComponent() {
         internal var pointerDirection: PointerDirection? = null
 
         private val myBoxPath = SvgPathElement()
+        private val myHighlightPoint = SvgCircleElement(DoubleVector.ZERO, 0.0)
         private val myWhitePointerPath = SvgPathElement()
         private val myPointerPath = SvgPathElement()
-        private val myWhiteHighlightPoint = SvgCircleElement()
-        private val myHighlightPoint = SvgCircleElement()
+        private val myWhiteHighlightPoint = SvgCircleElement(DoubleVector.ZERO, 0.0)
 
         private var myUseNewPointerStyle: Boolean = false
         private var myPointerStyle: TipLayoutHint.PointerStyle = TipLayoutHint.PointerStyle()
@@ -246,16 +246,41 @@ class TooltipBox: SvgComponent() {
 
         private fun buildNewStyle(pointerCoord: DoubleVector, stemLen: Double) {
 
-            // tooltip rectangle (todo add shadows and rounded corners)
+            // tooltip rectangle (todo add shadows)
             myBoxPath.apply {
                 d().set(
                     SvgPathDataBuilder().apply {
+                        val s = 3.0
                         with(contentRect) {
-                            moveTo(left, bottom)
-                            lineTo(right, bottom)
-                            lineTo(right, top)
-                            lineTo(left, top)
-                            lineTo(left, bottom)
+                            moveTo(left+s, bottom)
+
+                            lineTo(right-s, bottom)
+                            curveTo(
+                                DoubleVector(right-s, bottom),
+                                DoubleVector(right, bottom),
+                                DoubleVector(right, bottom-s)
+                            )
+
+                            lineTo(right, top+s)
+                            curveTo(
+                                DoubleVector(right, top+s),
+                                DoubleVector(right, top),
+                                DoubleVector(right-s, top)
+                            )
+
+                            lineTo(left+s, top)
+                            curveTo(
+                                DoubleVector(left+s, top),
+                                DoubleVector(left, top),
+                                DoubleVector(left, top+s)
+                            )
+
+                            lineTo(left, bottom-s)
+                            curveTo(
+                                DoubleVector(left, bottom-s),
+                                DoubleVector(left, bottom),
+                                DoubleVector(left+s, bottom)
+                            )
                         }
                     }.build()
                 )
