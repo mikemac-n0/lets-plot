@@ -49,7 +49,7 @@ class TooltipBox: SvgComponent() {
 
     private var useNewPointerStyleForTooltip = false
     private var addDataPointColorElement = false
-    private val leftOffsetInContentRect get() = if (addDataPointColorElement) 8.0 else 0.0
+    private val additionalIndentInContentRect get() = if (addDataPointColorElement) H_CONTENT_PADDING * 2 else 0.0
 
     override fun buildComponent() {
         add(myPointerBox)
@@ -95,23 +95,21 @@ class TooltipBox: SvgComponent() {
         internal var pointerDirection: PointerDirection? = null
 
         private val myBoxPath = SvgPathElement()
-        private val myHighlightPoint = SvgCircleElement(DoubleVector.ZERO, 0.0)
-        private val myWhitePointerPath = SvgPathElement()
-        private val myPointerPath = SvgPathElement()
-        private val myWhiteHighlightPoint = SvgCircleElement(DoubleVector.ZERO, 0.0)
-        private val myDataPointColorRect = SvgPathElement()
 
-        private var myPointerStyle: TipLayoutHint.PointerStyle = TipLayoutHint.PointerStyle()
+        // additional elements for the new style tooltips (pointer path, highlight point, color marker)
+        private val myNewStyleTooltip = RetainableComponents(::NewStylePointerBox, rootGroup)
 
         override fun buildComponent() {
-            add(myWhitePointerPath)
-            add(myPointerPath)
-            add(myWhiteHighlightPoint)
-            add(myHighlightPoint)
             add(myBoxPath)
-            add(myDataPointColorRect)
         }
 
+        private fun getNewStyleTooltipElements(): NewStylePointerBox? {
+            return if (useNewPointerStyleForTooltip) {
+                myNewStyleTooltip.provide(1).first()
+            } else {
+                null
+            }
+        }
         internal fun updateStyle(
             fillColor: Color,
             borderColor: Color,
@@ -124,33 +122,10 @@ class TooltipBox: SvgComponent() {
                 strokeOpacity().set(strokeWidth)
                 fillColor().set(fillColor)
             }
-            myDataPointColorRect.apply {
-                if (addDataPointColorElement) {
-                    strokeColor().set(dataPointColor)
-                    strokeOpacity().set(1.0)
-                    strokeWidth().set(4.0)
-                    visibility().set(SvgGraphicsElement.Visibility.VISIBLE)
-                } else {
-                    visibility().set(SvgGraphicsElement.Visibility.HIDDEN)
-                }
-            }
-
-            if (useNewPointerStyleForTooltip) {
-                updateNewStyle(pointerStyle)
-                setPointerPathVisibility(SvgGraphicsElement.Visibility.VISIBLE)
-            } else {
-                setPointerPathVisibility(SvgGraphicsElement.Visibility.HIDDEN)
-            }
+            getNewStyleTooltipElements()?.updateStyle(pointerStyle, dataPointColor) ?: myNewStyleTooltip.provide(0)
         }
 
-        private fun setPointerPathVisibility(visibility: SvgGraphicsElement.Visibility) {
-            myWhitePointerPath.visibility().set(visibility)
-            myPointerPath.visibility().set(visibility)
-            myWhiteHighlightPoint.visibility().set(visibility)
-            myHighlightPoint.visibility().set(visibility)
-        }
-
-        private fun calcPointerDirection(pointerCoord: DoubleVector, orientation: Orientation) {
+        internal fun update(pointerCoord: DoubleVector, orientation: Orientation, stemLen: Double) {
             pointerDirection = when (orientation) {
                 HORIZONTAL -> when {
                     pointerCoord.x < contentRect.left -> LEFT
@@ -163,18 +138,11 @@ class TooltipBox: SvgComponent() {
                     else -> null
                 }
             }
+
+            return getNewStyleTooltipElements()?.update(pointerCoord, stemLen) ?: update(pointerCoord)
         }
 
-        internal fun update(pointerCoord: DoubleVector, orientation: Orientation, stemLen: Double) {
-            calcPointerDirection(pointerCoord, orientation)
-            return if (useNewPointerStyleForTooltip) {
-                buildNewStyle(pointerCoord, stemLen)
-            } else {
-                buildOldStyle(pointerCoord)
-            }
-        }
-
-        private fun buildOldStyle(pointerCoord: DoubleVector) {
+        private fun update(pointerCoord: DoubleVector) {
             val vertFootingIndent = -calculatePointerFootingIndent(contentRect.height)
             val horFootingIndent = calculatePointerFootingIndent(contentRect.width)
 
@@ -220,152 +188,176 @@ class TooltipBox: SvgComponent() {
             return (sideLength - footingLength) / 2
         }
 
-        private fun updateNewStyle(pointerStyle: TipLayoutHint.PointerStyle?) {
-            if (pointerStyle != null) {
-                myPointerStyle = pointerStyle
-            }
-            val borderSize = 1.0
-            val whiteBackLineSize = 3.0
+        private inner class NewStylePointerBox : SvgComponent() {
+            private val myHighlightPoint = SvgCircleElement(DoubleVector.ZERO, 0.0)
+            private val myWhitePointerPath = SvgPathElement()
+            private val myPointerPath = SvgPathElement()
+            private val myWhiteHighlightPoint = SvgCircleElement(DoubleVector.ZERO, 0.0)
+            private val myDataPointColorMarker = SvgPathElement()
 
-            // white border for the path
-            myWhitePointerPath.apply {
-                strokeColor().set(Color.WHITE)
-                strokeWidth().set(whiteBackLineSize)
-            }
+            private lateinit var myPointerStyle: TipLayoutHint.PointerStyle
 
-            // path to point
-            myPointerPath.apply {
-                strokeColor().set(Color.BLACK)
-                strokeWidth().set(borderSize)
+            override fun buildComponent() {
+                add(myWhitePointerPath)
+                add(myPointerPath)
+                add(myWhiteHighlightPoint)
+                add(myHighlightPoint)
+                add(myDataPointColorMarker)
             }
 
-            // white border for highlight point
-            if (myPointerStyle.isTransparent()) {
-                myWhiteHighlightPoint.apply {
-                    fillOpacity().set(0.0)
-                    strokeWidth().set(whiteBackLineSize)
+            internal fun updateStyle(pointerStyle: TipLayoutHint.PointerStyle?, dataPointColor: Color?) {
+                myPointerStyle = pointerStyle ?: TipLayoutHint.PointerStyle()
+
+                val borderSize = 1.0
+                val whiteBackLineSize = 3.0
+
+                // white border for the path
+                myWhitePointerPath.apply {
                     strokeColor().set(Color.WHITE)
+                    strokeWidth().set(whiteBackLineSize)
                 }
-            }
-            // highlight point
-            myHighlightPoint.apply {
-                if (myPointerStyle.isTransparent()) {
-                    fillOpacity().set(0.0)
+
+                // path to point
+                myPointerPath.apply {
+                    strokeColor().set(Color.BLACK)
                     strokeWidth().set(borderSize)
-                } else {
-                    fillColor().set(myPointerStyle.fillColor)
                 }
-                strokeColor().set(myPointerStyle.strokeColor)
+
+                // white border for highlight point
+                if (myPointerStyle.isTransparent()) {
+                    myWhiteHighlightPoint.apply {
+                        fillOpacity().set(0.0)
+                        strokeWidth().set(whiteBackLineSize)
+                        strokeColor().set(Color.WHITE)
+                    }
+                }
+                // highlight point
+                myHighlightPoint.apply {
+                    if (myPointerStyle.isTransparent()) {
+                        fillOpacity().set(0.0)
+                        strokeWidth().set(borderSize)
+                    } else {
+                        fillColor().set(myPointerStyle.fillColor)
+                    }
+                    strokeColor().set(myPointerStyle.strokeColor)
+                }
+                // data point marker
+                myDataPointColorMarker.apply {
+                    if (dataPointColor != null) {
+                        strokeColor().set(dataPointColor)
+                        strokeOpacity().set(1.0)
+                        strokeWidth().set(4.0)
+                    } else {
+                        strokeOpacity().set(0.0)
+                    }
+                }
             }
-        }
 
-        private fun buildNewStyle(pointerCoord: DoubleVector, stemLen: Double) {
-
-            // tooltip rectangle (todo add shadows)
-            myBoxPath.apply {
-                d().set(
+            fun update(pointerCoord: DoubleVector, stemLen: Double) {
+                // tooltip rectangle (todo add shadows)
+                myBoxPath.d().set(
                     SvgPathDataBuilder().apply {
                         val s = 4.0
                         with(contentRect) {
-                            moveTo(left+s, bottom)
+                            moveTo(left + s, bottom)
 
-                            lineTo(right-s, bottom)
+                            lineTo(right - s, bottom)
                             curveTo(
-                                DoubleVector(right-s, bottom),
+                                DoubleVector(right - s, bottom),
                                 DoubleVector(right, bottom),
-                                DoubleVector(right, bottom-s)
+                                DoubleVector(right, bottom - s)
                             )
 
-                            lineTo(right, top+s)
+                            lineTo(right, top + s)
                             curveTo(
-                                DoubleVector(right, top+s),
+                                DoubleVector(right, top + s),
                                 DoubleVector(right, top),
-                                DoubleVector(right-s, top)
+                                DoubleVector(right - s, top)
                             )
 
-                            lineTo(left+s, top)
+                            lineTo(left + s, top)
                             curveTo(
-                                DoubleVector(left+s, top),
+                                DoubleVector(left + s, top),
                                 DoubleVector(left, top),
-                                DoubleVector(left, top+s)
+                                DoubleVector(left, top + s)
                             )
 
-                            lineTo(left, bottom-s)
+                            lineTo(left, bottom - s)
                             curveTo(
-                                DoubleVector(left, bottom-s),
+                                DoubleVector(left, bottom - s),
                                 DoubleVector(left, bottom),
-                                DoubleVector(left+s, bottom)
+                                DoubleVector(left + s, bottom)
                             )
                         }
                     }.build()
                 )
-            }
 
-            myDataPointColorRect.apply {
-                val offset = 4.0
-                val leftOffset = 6.0
-                d().set(
-                    SvgPathDataBuilder().apply {
-                        with(contentRect) {
-                            moveTo(left + leftOffset, bottom - offset)
-                            lineTo(left + leftOffset, top + offset)
-                        }
-
-                    }.build()
-                )
-            }
-
-            // path to the highlight point
-
-            val pointBorder = if (!myPointerStyle.isTransparent()) {
-                pointerCoord
-            } else {
-                when (pointerDirection) {
-                    LEFT -> pointerCoord.subtract(DoubleVector(myPointerStyle.size, 0.0))
-                    RIGHT -> pointerCoord.add(DoubleVector(myPointerStyle.size, 0.0))
-                    UP -> pointerCoord.add(DoubleVector(0.0, myPointerStyle.size))
-                    DOWN -> pointerCoord.subtract(DoubleVector(0.0, myPointerStyle.size))
-                    null -> pointerCoord
+                // data point color marker
+                if (addDataPointColorElement) {
+                    val vertOffset = V_CONTENT_PADDING
+                    val horIndent = H_CONTENT_PADDING * 1.5
+                    myDataPointColorMarker.d().set(
+                        SvgPathDataBuilder().apply {
+                            with(contentRect) {
+                                moveTo(left + horIndent, bottom - vertOffset)
+                                lineTo(left + horIndent, top + vertOffset)
+                            }
+                        }.build()
+                    )
                 }
-            }
 
-            //  start pointer from a middle of a box, not from a corner, increase length of the pointer.
-            val fromRectPoint = when (pointerDirection) {
-                LEFT -> DoubleVector(contentRect.left, contentRect.center.y)
-                RIGHT -> DoubleVector(contentRect.right, contentRect.center.y)
-                UP -> DoubleVector(contentRect.center.x, contentRect.top)
-                DOWN -> DoubleVector(contentRect.center.x, contentRect.bottom)
-                null -> TODO()
-            }
-            val lineLen = stemLen / 1.5
-            val middlePoint = when (pointerDirection) {
-                LEFT -> fromRectPoint.subtract(DoubleVector(lineLen, 0.0))
-                RIGHT -> fromRectPoint.add(DoubleVector(lineLen, 0.0))
-                UP -> fromRectPoint.subtract(DoubleVector(0.0, lineLen))
-                DOWN -> fromRectPoint.add(DoubleVector(0.0, lineLen))
-                null -> TODO()
-            }
+                // path to the highlight point
 
-            val svgPathData = SvgPathDataBuilder().apply {
-                moveTo(fromRectPoint)
-                lineTo(middlePoint)
-                /// from horizontal/vertical
-                moveTo(middlePoint)
-                lineTo(pointBorder)
-            }.build()
+                val pointBorder = if (!myPointerStyle.isTransparent()) {
+                    pointerCoord
+                } else {
+                    when (pointerDirection) {
+                        LEFT -> pointerCoord.subtract(DoubleVector(myPointerStyle.size, 0.0))
+                        RIGHT -> pointerCoord.add(DoubleVector(myPointerStyle.size, 0.0))
+                        UP -> pointerCoord.add(DoubleVector(0.0, myPointerStyle.size))
+                        DOWN -> pointerCoord.subtract(DoubleVector(0.0, myPointerStyle.size))
+                        null -> pointerCoord
+                    }
+                }
 
-            // pointer path with the highlight point
-            myWhitePointerPath.d().set(svgPathData)
-            myPointerPath.d().set(svgPathData)
-            myWhiteHighlightPoint.apply {
-                cx().set(pointerCoord.x)
-                cy().set(pointerCoord.y)
-                r().set(myPointerStyle.size)
-            }
-            myHighlightPoint.apply {
-                cx().set(pointerCoord.x)
-                cy().set(pointerCoord.y)
-                r().set(myPointerStyle.size)
+                //  start pointer from a middle of a box, not from a corner, increase length of the pointer.
+                val fromRectPoint = when (pointerDirection) {
+                    LEFT -> DoubleVector(contentRect.left, contentRect.center.y)
+                    RIGHT -> DoubleVector(contentRect.right, contentRect.center.y)
+                    UP -> DoubleVector(contentRect.center.x, contentRect.top)
+                    DOWN -> DoubleVector(contentRect.center.x, contentRect.bottom)
+                    null -> TODO()
+                }
+                val lineLen = stemLen / 1.5
+                val middlePoint = when (pointerDirection) {
+                    LEFT -> fromRectPoint.subtract(DoubleVector(lineLen, 0.0))
+                    RIGHT -> fromRectPoint.add(DoubleVector(lineLen, 0.0))
+                    UP -> fromRectPoint.subtract(DoubleVector(0.0, lineLen))
+                    DOWN -> fromRectPoint.add(DoubleVector(0.0, lineLen))
+                    null -> TODO()
+                }
+
+                val svgPathData = SvgPathDataBuilder().apply {
+                    moveTo(fromRectPoint)
+                    lineTo(middlePoint)
+                    /// from horizontal/vertical
+                    moveTo(middlePoint)
+                    lineTo(pointBorder)
+                }.build()
+
+                // pointer path with the highlight point
+                myWhitePointerPath.d().set(svgPathData)
+                myPointerPath.d().set(svgPathData)
+                myWhiteHighlightPoint.apply {
+                    cx().set(pointerCoord.x)
+                    cy().set(pointerCoord.y)
+                    r().set(myPointerStyle.size)
+                }
+                myHighlightPoint.apply {
+                    cx().set(pointerCoord.x)
+                    cy().set(pointerCoord.y)
+                    r().set(myPointerStyle.size)
+                }
             }
         }
     }
@@ -386,7 +378,7 @@ class TooltipBox: SvgComponent() {
 
         val dimension get() = myContent.run {
             DoubleVector(
-                width().get()!! + leftOffsetInContentRect,
+                width().get()!! + additionalIndentInContentRect,
                 height().get()!!
             )
         }
@@ -549,7 +541,7 @@ class TooltipBox: SvgComponent() {
             myContent.apply {
                 width().set(textSize.x + H_CONTENT_PADDING * 2)
                 height().set(textSize.y + V_CONTENT_PADDING * 2)
-                moveTo(leftOffsetInContentRect, 0.0)
+                moveTo(additionalIndentInContentRect, 0.0)
             }
         }
     }
