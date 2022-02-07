@@ -19,49 +19,70 @@ import jetbrains.datalore.vis.svg.SvgUtils
 class PlotSpecLabelSizesDemo : SimpleDemoBase(DEMO_BOX_SIZE) {
 
     // todo experimental rule for text width calculating
-    enum class LetterCategory(val value: Double) {
-        NARROW(0.3),
-        NORMAL(0.67),
-        WIDE(0.8),
-        EXTRA_WIDE(0.98);
+    enum class CharCategory(val value: Double) {
+        EXTRA_NARROW(0.5),
+        NARROW(0.6),
+        NORMAL(1.0),
+        WIDE(1.3),
+        EXTRA_WIDE(1.5);
 
         companion object {
-            private fun getLetterCategory(letter: Char): LetterCategory {
-                return when (letter) {
+            private fun getCharCategory(ch: Char): CharCategory {
+                return when (ch) {
                     'i', 'j', 'l',
-                    '!', '.', ',', '\'',
-                    'I'-> NARROW
-                    'm', 'M', 'W' -> EXTRA_WIDE
-                    'w', in 'A'..'Z', in '0'..'9' -> WIDE
+                    '.', ',', '\'',
+                    'I' -> EXTRA_NARROW
+                    'f', 't', '(', ')', '[', ']', '{', '}', '!' -> NARROW
+                    'm', 'M', 'W', '%' -> EXTRA_WIDE
+                    'w', in 'A'..'Z', '+', '&' -> WIDE
                     else -> NORMAL
                 }
             }
 
-            fun getLetterRatio(letter: Char): Double {
-                return getLetterCategory(letter).value
-            }
+            fun getCharRatio(ch: Char) = getCharCategory(ch).value
         }
     }
 
     // todo later should be moved to LabelMetrics.kt
     fun PlotLabelSpec.width(text: String): Double {
-        return text.map(LetterCategory.Companion::getLetterRatio).sum() * fontSize
+        ////
+        val FONT_WEIGHT_BOLD_TO_NORMAL_WIDTH_RATIO = 1.075
+        val FONT_WEIGHT_TO_NORMAL_WIDTH_RATIO = 0.63
+        val FONT_SIZE_TO_GLYPH_WIDTH_RATIO_MONOSPACED = 0.6
+        ////
+
+        val ratioFunc: (Char) -> Double = when {
+            isMonospaced -> {
+                { FONT_SIZE_TO_GLYPH_WIDTH_RATIO_MONOSPACED }
+            }
+            else -> CharCategory::getCharRatio
+        }
+        val width = text.map(ratioFunc).sum() * fontSize * FONT_WEIGHT_TO_NORMAL_WIDTH_RATIO
+        return if (isBold) {
+            width * FONT_WEIGHT_BOLD_TO_NORMAL_WIDTH_RATIO
+        } else {
+            width
+        }
     }
 
-    ////////
-
     fun createModels(): List<GroupComponent> {
+        return createModelForLabelSpec(PlotLabelSpec.PLOT_TITLE) +
+                createModelForLabelSpec(PlotLabelSpec.PLOT_SUBTITLE) +
+                createModelForLabelSpec(PlotLabelSpec.AXIS_TITLE) +
+                createModelForLabelSpec(PlotLabelSpec.AXIS_TICK) +
+                createModelForLabelSpec(PlotLabelSpec.AXIS_TICK_SMALL) +
+                createModelForLabelSpec(PlotLabelSpec.LEGEND_TITLE) +
+                createModelForLabelSpec(PlotLabelSpec.LEGEND_ITEM)
+    }
+
+    private fun createModelForLabelSpec(labelSpec: PlotLabelSpec): List<GroupComponent> {
         fun titles(charRange: CharRange): List<String> =
-            charRange.map { letter -> List(15) { letter }.joinToString("") }
+            charRange.map { ch -> List(15) { ch }.joinToString("") }
 
         return listOf(
-            createModel(PlotLabelSpec.PLOT_TITLE, titles('A'..'Z')),
-            createModel(PlotLabelSpec.PLOT_TITLE, titles('a'..'z')),
-            createModel(PlotLabelSpec.PLOT_TITLE, titles('!'..'9')),
-
-            createModel(PlotLabelSpec.AXIS_TITLE, titles('A'..'Z')),
-            createModel(PlotLabelSpec.AXIS_TITLE, titles('a'..'z')),
-            createModel(PlotLabelSpec.AXIS_TITLE, titles('!'..'9')),
+            createModel(labelSpec, titles('A'..'Z')),
+            createModel(labelSpec, titles('a'..'z')),
+            createModel(labelSpec, titles('!'..'9')),
         )
     }
 
@@ -75,6 +96,8 @@ class PlotSpecLabelSizesDemo : SimpleDemoBase(DEMO_BOX_SIZE) {
         SvgUtils.transformTranslate(nameSpecElement, 10.0, y)
         groupComponent.add(nameSpecElement)
 
+        y += plotLabelSpec.height() * 2
+
         titles
             .map { title -> LabelSpec(title, plotLabelSpec) }
             .forEach { spec ->
@@ -84,12 +107,12 @@ class PlotSpecLabelSizesDemo : SimpleDemoBase(DEMO_BOX_SIZE) {
                 SvgUtils.transformTranslate(element, x, y)
                 groupComponent.add(element)
 
-                val titleSizeNew = titleDimensions(spec, useLetterTypes = true)
+                val titleSizeNew = titleDimensions(spec, useNewWidthFunction = true)
                 val rectNew = DoubleRectangle(x, y - titleSizeNew.y / 2, titleSizeNew.x, titleSizeNew.y)
-                val titleSizeOld = titleDimensions(spec, useLetterTypes = false)
+                val titleSizeOld = titleDimensions(spec, useNewWidthFunction = false)
                 val rectOld = DoubleRectangle(x, y - titleSizeOld.y / 2, titleSizeOld.x, titleSizeOld.y)
 
-                groupComponent.add(svgRect(rectOld, Color.DARK_GREEN, strokeWidth = 2.0))
+                groupComponent.add(svgRect(rectOld, Color.LIGHT_BLUE, strokeWidth = 2.0))
                 groupComponent.add(svgRect(rectNew, Color.MAGENTA, strokeWidth = 1.5))
 
                 y += titleSizeOld.y + 10.0
@@ -105,11 +128,11 @@ class PlotSpecLabelSizesDemo : SimpleDemoBase(DEMO_BOX_SIZE) {
         return rect
     }
 
-    private fun titleDimensions(spec: LabelSpec, useLetterTypes: Boolean): DoubleVector {
+    private fun titleDimensions(spec: LabelSpec, useNewWidthFunction: Boolean): DoubleVector {
         if (spec.text.isEmpty()) {
             return DoubleVector.ZERO
         }
-        val width = if (useLetterTypes) {
+        val width = if (useNewWidthFunction) {
             spec.plotLabelSpec.width(spec.text)
         } else {
             spec.plotLabelSpec.width(spec.text.length)
@@ -141,7 +164,7 @@ class PlotSpecLabelSizesDemo : SimpleDemoBase(DEMO_BOX_SIZE) {
         }
 
         private fun labelSpecToString(plotLabelSpec: PlotLabelSpec): String {
-            return plotLabelSpec.name
+            return plotLabelSpec.run { "$name: fontSize=$fontSize; bold=$isBold; monospaced=$isMonospaced" }
         }
     }
 }
