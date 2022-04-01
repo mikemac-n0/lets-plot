@@ -5,10 +5,10 @@
 
 package jetbrains.datalore.plot.builder.layout.axis.label
 
-import jetbrains.datalore.base.gcommon.collect.ClosedRange
+import jetbrains.datalore.base.interval.DoubleSpan
 import jetbrains.datalore.base.geometry.DoubleRectangle
 import jetbrains.datalore.base.geometry.DoubleVector
-import jetbrains.datalore.plot.base.render.svg.TextLabel
+import jetbrains.datalore.plot.base.render.svg.Text
 import jetbrains.datalore.plot.base.scale.ScaleBreaks
 import jetbrains.datalore.plot.builder.guide.Orientation
 import jetbrains.datalore.plot.builder.layout.GeometryUtil
@@ -17,7 +17,7 @@ import jetbrains.datalore.plot.builder.theme.AxisTheme
 
 internal abstract class AbstractFixedBreaksLabelsLayout(
     orientation: Orientation,
-    axisDomain: ClosedRange<Double>,
+    axisDomain: DoubleSpan,
     labelSpec: PlotLabelSpec,
     protected val breaks: ScaleBreaks,
     theme: AxisTheme
@@ -81,8 +81,8 @@ internal abstract class AbstractFixedBreaksLabelsLayout(
                 .smallFont(false)
                 .overlap(false)
                 .labelAdditionalOffsets(null)
-                .labelHorizontalAnchor(TextLabel.HorizontalAnchor.MIDDLE)
-                .labelVerticalAnchor(TextLabel.VerticalAnchor.TOP)
+                .labelHorizontalAnchor(Text.HorizontalAnchor.MIDDLE)
+                .labelVerticalAnchor(Text.VerticalAnchor.TOP)
                 .build()
         }
 

@@ -8,20 +8,26 @@ package jetbrains.datalore.plot.config
 import jetbrains.datalore.base.stringFormat.StringFormat
 import jetbrains.datalore.plot.base.GeomKind
 import jetbrains.datalore.plot.base.geom.*
+import jetbrains.datalore.plot.base.livemap.LivemapConstants.DisplayMode
+import jetbrains.datalore.plot.base.livemap.LivemapConstants.DisplayMode.POINT
+import jetbrains.datalore.plot.base.stat.DotplotStat
 import jetbrains.datalore.plot.builder.assemble.geom.GeomProvider
 import jetbrains.datalore.plot.builder.coord.CoordProvider
 import jetbrains.datalore.plot.builder.coord.CoordProviders
-import jetbrains.datalore.plot.config.LiveMapOptionsParser.Companion.parseFromLayerOptions
 import jetbrains.datalore.plot.config.Option.Geom.Boxplot
 import jetbrains.datalore.plot.config.Option.Geom.BoxplotOutlier
 import jetbrains.datalore.plot.config.Option.Geom.CrossBar
+import jetbrains.datalore.plot.config.Option.Geom.Dotplot
 import jetbrains.datalore.plot.config.Option.Geom.Image
+import jetbrains.datalore.plot.config.Option.Geom.LiveMap.DISPLAY_MODE
 import jetbrains.datalore.plot.config.Option.Geom.Path
 import jetbrains.datalore.plot.config.Option.Geom.Point
 import jetbrains.datalore.plot.config.Option.Geom.PointRange
 import jetbrains.datalore.plot.config.Option.Geom.Segment
 import jetbrains.datalore.plot.config.Option.Geom.Step
 import jetbrains.datalore.plot.config.Option.Geom.Text
+import jetbrains.datalore.plot.config.Option.Geom.Violin
+import jetbrains.datalore.plot.config.Option.Geom.YDotplot
 
 
 class GeomProtoClientSide(geomKind: GeomKind) : GeomProto(geomKind) {
@@ -50,6 +56,26 @@ class GeomProtoClientSide(geomKind: GeomKind) : GeomProto(geomKind) {
 
     fun geomProvider(opts: OptionsAccessor): GeomProvider {
         when (geomKind) {
+            GeomKind.DOT_PLOT -> return GeomProvider.dotplot {
+                val geom = DotplotGeom()
+                if (opts.hasOwn(Dotplot.DOTSIZE)) {
+                    geom.dotSize = opts.getDouble(Dotplot.DOTSIZE)!!
+                }
+                if (opts.hasOwn(Dotplot.STACKRATIO)) {
+                    geom.stackRatio = opts.getDouble(Dotplot.STACKRATIO)!!
+                }
+                if (opts.hasOwn(Dotplot.STACKGROUPS)) {
+                    geom.stackGroups = opts.getBoolean(Dotplot.STACKGROUPS)
+                }
+                if (opts.hasOwn(Dotplot.STACKDIR)) {
+                    geom.stackDir = DotplotGeom.Stackdir.safeValueOf(opts.getString(Dotplot.STACKDIR)!!)
+                }
+                if (opts.hasOwn(Dotplot.METHOD)) {
+                    geom.method = DotplotStat.Method.safeValueOf(opts.getString(Dotplot.METHOD)!!)
+                }
+                geom
+            }
+
             GeomKind.CROSS_BAR -> return GeomProvider.crossBar {
                 val geom = CrossBarGeom()
                 if (opts.hasOwn(CrossBar.FATTEN)) {
@@ -82,8 +108,35 @@ class GeomProtoClientSide(geomKind: GeomKind) : GeomProto(geomKind) {
                 geom
             }
 
+            GeomKind.VIOLIN -> return GeomProvider.violin {
+                val geom = ViolinGeom()
+                if (opts.hasOwn(Violin.DRAW_QUANTILES)) {
+                    geom.setDrawQuantiles(opts.getBoundedDoubleList(Violin.DRAW_QUANTILES, 0.0, 1.0))
+                }
+                geom
+            }
+            GeomKind.Y_DOT_PLOT -> return GeomProvider.ydotplot {
+                val geom = YDotplotGeom()
+                if (opts.hasOwn(YDotplot.DOTSIZE)) {
+                    geom.dotSize = opts.getDouble(YDotplot.DOTSIZE)!!
+                }
+                if (opts.hasOwn(YDotplot.STACKRATIO)) {
+                    geom.stackRatio = opts.getDouble(YDotplot.STACKRATIO)!!
+                }
+                if (opts.hasOwn(YDotplot.STACKGROUPS)) {
+                    geom.stackGroups = opts.getBoolean(YDotplot.STACKGROUPS)
+                }
+                if (opts.hasOwn(YDotplot.STACKDIR)) {
+                    geom.yStackDir = YDotplotGeom.YStackdir.safeValueOf(opts.getString(YDotplot.STACKDIR)!!)
+                }
+                if (opts.hasOwn(YDotplot.METHOD)) {
+                    geom.method = DotplotStat.Method.safeValueOf(opts.getString(YDotplot.METHOD)!!)
+                }
+                geom
+            }
+
             GeomKind.LIVE_MAP -> {
-                return GeomProvider.livemap(parseFromLayerOptions(opts))
+                return GeomProvider.livemap(opts.mergedOptions.getEnum<DisplayMode>(DISPLAY_MODE) ?: POINT)
             }
 
             GeomKind.STEP -> return GeomProvider.step {
@@ -177,6 +230,7 @@ class GeomProtoClientSide(geomKind: GeomKind) : GeomProto(geomKind) {
             PROVIDER[GeomKind.SMOOTH] = GeomProvider.smooth()
             PROVIDER[GeomKind.BAR] = GeomProvider.bar()
             PROVIDER[GeomKind.HISTOGRAM] = GeomProvider.histogram()
+            // dotplot - special case
             PROVIDER[GeomKind.TILE] = GeomProvider.tile()
             PROVIDER[GeomKind.BIN_2D] = GeomProvider.bin2d()
             PROVIDER[GeomKind.ERROR_BAR] = GeomProvider.errorBar()
@@ -191,6 +245,7 @@ class GeomProtoClientSide(geomKind: GeomKind) : GeomProto(geomKind) {
             PROVIDER[GeomKind.H_LINE] = GeomProvider.hline()
             PROVIDER[GeomKind.V_LINE] = GeomProvider.vline()
             // boxplot - special case
+            // violin - special case
             PROVIDER[GeomKind.RIBBON] = GeomProvider.ribbon()
             PROVIDER[GeomKind.AREA] = GeomProvider.area()
             PROVIDER[GeomKind.DENSITY] = GeomProvider.density()

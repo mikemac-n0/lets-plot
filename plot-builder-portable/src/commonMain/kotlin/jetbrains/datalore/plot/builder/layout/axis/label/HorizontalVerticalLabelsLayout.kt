@@ -5,10 +5,10 @@
 
 package jetbrains.datalore.plot.builder.layout.axis.label
 
-import jetbrains.datalore.base.gcommon.collect.ClosedRange
+import jetbrains.datalore.base.interval.DoubleSpan
 import jetbrains.datalore.base.geometry.DoubleRectangle
 import jetbrains.datalore.base.geometry.DoubleVector
-import jetbrains.datalore.plot.base.render.svg.TextLabel
+import jetbrains.datalore.plot.base.render.svg.Text
 import jetbrains.datalore.plot.base.scale.ScaleBreaks
 import jetbrains.datalore.plot.builder.guide.Orientation
 import jetbrains.datalore.plot.builder.guide.Orientation.BOTTOM
@@ -18,22 +18,22 @@ import kotlin.math.abs
 
 internal class HorizontalVerticalLabelsLayout(
     orientation: Orientation,
-    axisDomain: ClosedRange<Double>,
+    axisDomain: DoubleSpan,
     labelSpec: PlotLabelSpec,
     breaks: ScaleBreaks,
     theme: AxisTheme
 ) : AbstractFixedBreaksLabelsLayout(orientation, axisDomain, labelSpec, breaks, theme) {
 
-    val labelHorizontalAnchor: TextLabel.HorizontalAnchor
+    val labelHorizontalAnchor: Text.HorizontalAnchor
         get() {
             if (orientation === BOTTOM) {
-                return TextLabel.HorizontalAnchor.LEFT
+                return Text.HorizontalAnchor.LEFT
             }
             throw RuntimeException("Not implemented")
         }
 
-    val labelVerticalAnchor: TextLabel.VerticalAnchor
-        get() = TextLabel.VerticalAnchor.CENTER
+    val labelVerticalAnchor: Text.VerticalAnchor
+        get() = Text.VerticalAnchor.CENTER
 
     override fun doLayout(
         axisLength: Double,
@@ -63,8 +63,8 @@ internal class HorizontalVerticalLabelsLayout(
 
     override fun labelBounds(labelNormalSize: DoubleVector): DoubleRectangle {
         if (!(ROTATION_DEGREE == 90.0
-                    && labelHorizontalAnchor === TextLabel.HorizontalAnchor.LEFT
-                    && labelVerticalAnchor === TextLabel.VerticalAnchor.CENTER)
+                    && labelHorizontalAnchor === Text.HorizontalAnchor.LEFT
+                    && labelVerticalAnchor === Text.VerticalAnchor.CENTER)
         ) {
             throw RuntimeException("Not implemented")
         }

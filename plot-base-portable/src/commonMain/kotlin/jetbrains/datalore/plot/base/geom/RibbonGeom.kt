@@ -7,12 +7,10 @@ package jetbrains.datalore.plot.base.geom
 
 
 import jetbrains.datalore.base.geometry.DoubleVector
+import jetbrains.datalore.base.values.Color
 import jetbrains.datalore.plot.base.*
-import jetbrains.datalore.plot.base.geom.util.GeomHelper
-import jetbrains.datalore.plot.base.geom.util.GeomUtil
-import jetbrains.datalore.plot.base.geom.util.HintsCollection
-import jetbrains.datalore.plot.base.geom.util.LinesHelper
-import jetbrains.datalore.plot.base.interact.GeomTargetCollector.TooltipParams.Companion.params
+import jetbrains.datalore.plot.base.geom.util.*
+import jetbrains.datalore.plot.base.interact.GeomTargetCollector.TooltipParams.Companion.tooltip
 import jetbrains.datalore.plot.base.interact.TipLayoutHint
 import jetbrains.datalore.plot.base.render.SvgRoot
 
@@ -40,8 +38,10 @@ class RibbonGeom : GeomBase() {
 
     private fun buildHints(aesthetics: Aesthetics, pos: PositionAdjustment, coord: CoordinateSystem, ctx: GeomContext) {
         val helper = GeomHelper(pos, coord, ctx)
+        val colorsByDataPoint = HintColorUtil.createColorMarkerMapper(GeomKind.RIBBON, ctx)
+
         for (p in aesthetics.dataPoints()) {
-            addTarget(p, ctx, GeomUtil.TO_LOCATION_X_YMAX, helper)
+            addTarget(p, ctx, GeomUtil.TO_LOCATION_X_YMAX, helper, colorsByDataPoint)
         }
     }
 
@@ -49,7 +49,8 @@ class RibbonGeom : GeomBase() {
         p: DataPointAesthetics,
         ctx: GeomContext,
         toLocation: (DataPointAesthetics) -> DoubleVector?,
-        helper: GeomHelper
+        helper: GeomHelper,
+        colorsByDataPoint: (DataPointAesthetics) -> List<Color>
     ) {
         val coord = toLocation(p)
         if (coord != null) {
@@ -76,7 +77,10 @@ class RibbonGeom : GeomBase() {
                 p.index(),
                 helper.toClient(coord, p),
                 0.0,
-                params().setTipLayoutHints(hintsCollection.hints)
+                tooltip {
+                    tipLayoutHints = hintsCollection.hints
+                    markerColors = colorsByDataPoint(p)
+                }
             )
         }
     }

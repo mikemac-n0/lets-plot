@@ -5,7 +5,7 @@
 
 package jetbrains.datalore.plot.builder.coord
 
-import jetbrains.datalore.base.gcommon.collect.ClosedRange
+import jetbrains.datalore.base.interval.DoubleSpan
 import jetbrains.datalore.base.geometry.DoubleVector
 import jetbrains.datalore.plot.common.data.SeriesUtil
 
@@ -17,21 +17,21 @@ import jetbrains.datalore.plot.common.data.SeriesUtil
  */
 internal open class FixedRatioCoordProvider(
     private val ratio: Double,
-    xLim: ClosedRange<Double>?,
-    yLim: ClosedRange<Double>?,
+    xLim: DoubleSpan?,
+    yLim: DoubleSpan?,
     flipped: Boolean
 ) : CoordProviderBase(xLim, yLim, flipped) {
     override fun with(
-        xLim: ClosedRange<Double>?,
-        yLim: ClosedRange<Double>?,
+        xLim: DoubleSpan?,
+        yLim: DoubleSpan?,
         flipped: Boolean
     ): CoordProvider {
         return FixedRatioCoordProvider(ratio, xLim, yLim, flipped)
     }
 
     override fun adjustGeomSize(
-        hDomain: ClosedRange<Double>,
-        vDomain: ClosedRange<Double>,
+        hDomain: DoubleSpan,
+        vDomain: DoubleSpan,
         geomSize: DoubleVector
     ): DoubleVector {
         // Adjust geom dimensions ratio.
@@ -60,7 +60,7 @@ internal open class FixedRatioCoordProvider(
             } else {
                 // adjust geom width
                 val w = geomSize.y * targetWidthToHeightRatio
-                val hDelta = geomSize.x - w
+//                val hDelta = geomSize.x - w
                 DoubleVector(w, geomSize.y)
             }
 

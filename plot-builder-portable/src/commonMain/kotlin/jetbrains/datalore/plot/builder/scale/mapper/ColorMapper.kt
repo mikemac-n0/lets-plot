@@ -5,7 +5,7 @@
 
 package jetbrains.datalore.plot.builder.scale.mapper
 
-import jetbrains.datalore.base.gcommon.collect.ClosedRange
+import jetbrains.datalore.base.interval.DoubleSpan
 import jetbrains.datalore.base.values.Color
 import jetbrains.datalore.base.values.Colors
 import jetbrains.datalore.base.values.HSV
@@ -19,7 +19,7 @@ object ColorMapper {
     val DEF_GRADIENT_LOW = Color.parseHex("#132B43")
     val DEF_GRADIENT_HIGH = Color.parseHex("#56B1F7")
 
-    fun gradientDefault(domain: ClosedRange<Double>): (Double?) -> Color {
+    fun gradientDefault(domain: DoubleSpan): (Double?) -> Color {
         return gradient(
             domain,
             DEF_GRADIENT_LOW,
@@ -28,7 +28,7 @@ object ColorMapper {
         )
     }
 
-    fun gradient(domain: ClosedRange<Double>, low: Color, high: Color, naColor: Color): (Double?) -> Color {
+    fun gradient(domain: DoubleSpan, low: Color, high: Color, naColor: Color): (Double?) -> Color {
         return gradientHSV(
             domain,
             Colors.hsvFromRgb(low),
@@ -42,7 +42,7 @@ object ColorMapper {
      * @deprecated
      */
     fun gradientHSV(
-        domain: ClosedRange<Double>,
+        domain: DoubleSpan,
         lowHSV: DoubleArray,
         highHSV: DoubleArray,
         autoHueDirection: Boolean,
@@ -58,7 +58,7 @@ object ColorMapper {
     }
 
     fun gradientHSV(
-        domain: ClosedRange<Double>,
+        domain: DoubleSpan,
         lowHSV: HSV,
         highHSV: HSV,
         autoHueDirection: Boolean,
@@ -90,18 +90,18 @@ object ColorMapper {
             }
         }
 
-        val mapperH = Mappers.linear(domain, lowHue, highHue, Double.NaN)
-        val mapperS = Mappers.linear(domain, lowS, highS, Double.NaN)
-        val mapperV = Mappers.linear(domain, lowHSV.v, highHSV.v, Double.NaN)
+        val mapperH = Mappers.linear(domain, lowHue, highHue, null)
+        val mapperS = Mappers.linear(domain, lowS, highS, null)
+        val mapperV = Mappers.linear(domain, lowHSV.v, highHSV.v, null)
 
         return { input ->
             if (input == null || !domain.contains(input)) {
                 naColor
             } else {
-                val hue = mapperH(input) % 360
+                val hue = mapperH(input)!! % 360
                 val H = if (hue >= 0) hue else 360 + hue
-                val S = mapperS(input)
-                val V = mapperV(input)
+                val S = mapperS(input)!!
+                val V = mapperV(input)!!
                 Colors.rgbFromHsv(H, S, V)
             }
         }

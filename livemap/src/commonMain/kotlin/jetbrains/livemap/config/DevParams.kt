@@ -5,16 +5,13 @@
 
 package jetbrains.livemap.config
 
-import jetbrains.livemap.core.rendering.layers.RenderTarget
+import jetbrains.livemap.core.layers.RenderTarget
 
 class DevParams(private val devParams: Map<*, *>) {
 
     companion object {
-        val SCALABLE_SYMBOLS = BoolParam("scalable_symbols", false)
-        val SCALABLE_SYMBOLS_ZOOM_IN_MULTIPLIER = DoubleParam("scalable_symbols_zoom_in_multiplier", 0.5)
-        val SCALABLE_SYMBOLS_ZOOM_OUT_MULTIPLIER = DoubleParam("scalable_symbols_zoom_out_multiplier", 1.0)
-        val SHOW_ADVANCED_ACTIONS = BoolParam("show_advanced_actions", true)
-        val SHOW_RESET_POSITION_ACTION = BoolParam("show_reset_position_action", false)
+        val ENABLE_SCALING = BoolParam("scalable_symbols", true)
+        val SHOW_RESET_POSITION_ACTION = BoolParam("show_reset_position_action", true)
 
         val PERF_STATS = BoolParam("perf_stats", false)
         val DEBUG_TILES = BoolParam("debug_tiles", false)

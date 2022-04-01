@@ -45,41 +45,17 @@ interface GeomTargetCollector {
     fun flip(): GeomTargetCollector
 
     class TooltipParams {
-
-        private var myTipLayoutHints = emptyMap<Aes<*>, TipLayoutHint>()
-        private var myColor = Color.GRAY
-        private var myStemLength = TipLayoutHint.StemLength.NORMAL
-
-        fun getTipLayoutHints(): Map<Aes<*>, TipLayoutHint> {
-            return myTipLayoutHints
-        }
-
-        fun setTipLayoutHints(tipLayoutHints: Map<Aes<*>, TipLayoutHint>): TooltipParams {
-            myTipLayoutHints = tipLayoutHints
-            return this
-        }
-
-        fun getColor(): Color {
-            return myColor
-        }
-
-        fun setColor(color: Color): TooltipParams {
-            myColor = color
-            return this
-        }
-
-        fun getStemLength(): TipLayoutHint.StemLength {
-            return myStemLength
-        }
-
-        fun setStemLength(stemLength: TipLayoutHint.StemLength): TooltipParams {
-            myStemLength = stemLength
-            return this
-        }
+        var tipLayoutHints = emptyMap<Aes<*>, TipLayoutHint>()
+        var stemLength = TipLayoutHint.StemLength.NORMAL
+        var fillColor: Color? = null
+        var markerColors: List<Color> = emptyList()
 
         companion object {
-            fun params(): TooltipParams {
+            fun tooltip(): TooltipParams {
                 return TooltipParams()
+            }
+            fun tooltip(block: TooltipParams.() -> Unit): TooltipParams {
+                return TooltipParams().apply(block)
             }
         }
     }

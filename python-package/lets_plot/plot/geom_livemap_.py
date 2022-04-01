@@ -32,6 +32,10 @@ def geom_livemap(mapping=None, *, data=None, show_legend=None, sampling=None, to
                  projection=None,
                  geodesic=None,
                  tiles=None,
+                 show_coord_pick_tools=None,
+                 data_size_zoomin=None,
+                 const_size_zoomin=None,
+                 ontop=None,
                  **other_args):
     """
     Display an interactive map.
@@ -45,7 +49,7 @@ def geom_livemap(mapping=None, *, data=None, show_legend=None, sampling=None, to
     data : dict or `DataFrame` or `GeoDataFrame`
         The data to be displayed in this layer. If None, the default, the data
         is inherited from the plot data as specified in the call to ggplot.
-    show_legend: bool, default=True
+    show_legend : bool, default=True
         False - do not show legend for this layer.
     sampling : `FeatureSpec`
         Result of the call to the `sampling_xxx()` function.
@@ -80,6 +84,25 @@ def geom_livemap(mapping=None, *, data=None, show_legend=None, sampling=None, to
         Tiles provider, either as a string - URL for a standard raster ZXY tile provider
         with {z}, {x} and {y} wildcards (e.g. 'http://my.tile.com/{z}/{x}/{y}.png')
         or the result of a call to a `maptiles_xxx()` functions.
+    show_coord_pick_tools : bool, defafult=False
+        Show buttons "copy location" and "draw geometry"
+    data_size_zoomin : int, defafult=0
+        Controls how zooming-in of the map widget increases size of geometry objects (circles, lines etc.) on map
+        when the size is set by means of mapping between the data and the `size` aesthetic.
+        `0` - size never increases;
+        `-1` - size will be increasing without limits;
+        `n` - a number of zooming-in steps (counting from the initial state of the map widget)
+        when size of objects will be increasing. Farther zooming will no longer affect the size.
+    const_size_zoomin : int, defafult=-1
+        Controls how zooming-in of the map widget increases size of geometry objects (circles, lines etc.) on map
+        when the size is not linked to a data (i.e. constant size).
+        `0` - size never increases;
+        `-1` - size will be increasing without limits;
+        `n` - a number of zooming-in steps (counting from the initial state of the map widget)
+        when size of objects will be increasing. Farther zooming will no longer affect the size.
+    ontop : bool, default=False
+        Whether geometry objects created by aesthetics mappings specified in directly in `geom_livemap()`
+        appear below (False) or ontop (True) of  objects of other plot layers.
     other_args
         Other arguments passed on to the layer.
         These are often aesthetics settings used to set an aesthetic to a fixed value,
@@ -148,7 +171,7 @@ def geom_livemap(mapping=None, *, data=None, show_legend=None, sampling=None, to
 
     .. jupyter-execute::
         :linenos:
-        :emphasize-lines: 9-13
+        :emphasize-lines: 9-12
 
         from lets_plot import *
         LetsPlot.setup_html()
@@ -161,8 +184,7 @@ def geom_livemap(mapping=None, *, data=None, show_legend=None, sampling=None, to
             geom_livemap(geodesic=False, projection='epsg4326', \\
                          symbol='point', color='white', \\
                          tiles=maptiles_lets_plot(theme='dark'), \\
-                         tooltips=layer_tooltips().line('@city')\\
-                                                  .color('black')) + \\
+                         tooltips=layer_tooltips().line('@city')) + \\
             geom_path(color='white') + \\
             ggtitle('SQ23 - the longest scheduled airline flight '
                     'by great circle distance since 2020')
@@ -221,7 +243,12 @@ def geom_livemap(mapping=None, *, data=None, show_legend=None, sampling=None, to
                  geodesic=geodesic,
                  tiles=tiles,
                  geocoding=geocoding,
-                 **other_args)
+                 show_coord_pick_tools=show_coord_pick_tools,
+                 data_size_zoomin=data_size_zoomin,
+                 const_size_zoomin=const_size_zoomin,
+                 ontop=ontop,
+                 **other_args
+    )
 
 
 LOCATION_COORDINATE_COLUMNS = {'lon', 'lat'}

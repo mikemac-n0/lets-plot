@@ -9,6 +9,7 @@ import jetbrains.datalore.base.typedGeometry.*
 import jetbrains.datalore.base.values.Color
 import jetbrains.datalore.vis.canvas.Context2d
 import jetbrains.livemap.Client
+import jetbrains.livemap.chart.Utils.changeAlphaWithMin
 import jetbrains.livemap.core.ecs.EcsEntity
 import jetbrains.livemap.mapengine.fillRect
 import jetbrains.livemap.mapengine.placement.ScreenLoopComponent
@@ -57,13 +58,13 @@ object BarChart {
             val chartElement = entity.get<ChartElementComponent>()
             val symbol = entity.get<SymbolComponent>()
 
-            splitColumns(symbol, chartElement.scaleFactor).forEach { column ->
-                ctx.setFillStyle(column.color)
+            splitColumns(symbol, chartElement.scalingSizeFactor).forEach { column ->
+                ctx.setFillStyle(changeAlphaWithMin(column.color, chartElement.scalingAlphaValue))
 
                 ctx.fillRect(column.rect)
 
                 if (chartElement.strokeColor != null && chartElement.strokeWidth != 0.0) {
-                    ctx.setStrokeStyle(chartElement.strokeColor)
+                    ctx.setStrokeStyle(changeAlphaWithMin(chartElement.strokeColor!!, chartElement.scalingAlphaValue))
                     ctx.setLineWidth(chartElement.strokeWidth)
                     ctx.strokeRect(column.rect)
                 }
@@ -81,13 +82,12 @@ object BarChart {
             val chartElement = target.get<ChartElementComponent>()
             val symbol = target.get<SymbolComponent>()
 
-            splitColumns(symbol, chartElement.scaleFactor).forEach { column ->
+            splitColumns(symbol, chartElement.scalingSizeFactor).forEach { column ->
                 target.get<ScreenLoopComponent>().origins.forEach {
                     if(column.rect.contains(coord - it)) {
                         return SearchResult(
                             target.get<IndexComponent>().layerIndex,
-                            index = column.index,
-                            color = column.color
+                            index = column.index
                         )
                     }
                 }
@@ -97,7 +97,6 @@ object BarChart {
         }
 
         override fun isCoordinateInTarget(coord: Vec<Client>, target: EcsEntity) = throw NotImplementedError()
-        override fun getColor(target: EcsEntity) = throw NotImplementedError()
 
         companion object {
             val LOCATABLE_COMPONENTS = listOf(SymbolComponent::class, ScreenLoopComponent::class)

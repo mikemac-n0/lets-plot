@@ -34,9 +34,15 @@ interface DataPointAesthetics {
 
     fun size(): Double?
 
+    fun stacksize(): Double?
+
     fun width(): Double?
 
     fun height(): Double?
+
+    fun binwidth(): Double?
+
+    fun violinwidth(): Double?
 
     fun weight(): Double?
 

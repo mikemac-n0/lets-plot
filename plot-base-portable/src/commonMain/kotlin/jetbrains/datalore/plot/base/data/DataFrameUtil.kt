@@ -8,7 +8,8 @@ package jetbrains.datalore.plot.base.data
 import jetbrains.datalore.base.gcommon.collect.Ordering
 import jetbrains.datalore.plot.base.Aes
 import jetbrains.datalore.plot.base.DataFrame
-import jetbrains.datalore.plot.base.Scale
+import jetbrains.datalore.plot.base.Transform
+import jetbrains.datalore.plot.base.scale.ScaleUtil
 import jetbrains.datalore.plot.base.stat.Stats
 import kotlin.jvm.JvmOverloads
 
@@ -17,29 +18,26 @@ object DataFrameUtil {
         return TransformVar.forAes(aes)
     }
 
-    fun applyTransform(data: DataFrame, `var`: DataFrame.Variable, aes: Aes<*>, scale: Scale<*>): DataFrame {
+    fun applyTransform(data: DataFrame, variable: DataFrame.Variable, aes: Aes<*>, transform: Transform): DataFrame {
         val transformVar = transformVarFor(aes)
-        return applyTransform(data, `var`, transformVar, scale)
+        return applyTransform(data, variable, transformVar, transform)
     }
 
     private fun applyTransform(
         data: DataFrame,
         variable: DataFrame.Variable,
         transformVar: DataFrame.Variable,
-        scale: Scale<*>
+        transform: Transform
     ): DataFrame {
-        var transformed = scale.applyTransform(
-            data[variable],
-            checkLimits = true
-        )
+        val transformed = ScaleUtil.applyTransform(data[variable], transform)
         return data.builder()
             .putNumeric(transformVar, transformed)
             .build()
     }
 
     fun hasVariable(data: DataFrame, varName: String): Boolean {
-        for (`var` in data.variables()) {
-            if (varName == `var`.name) {
+        for (v in data.variables()) {
+            if (varName == v.name) {
                 return true
             }
         }
@@ -142,5 +140,17 @@ object DataFrameUtil {
             }
         }
         return b.build()
+    }
+
+    fun addDateTimeVariables(data: DataFrame, dateTimeVars: Set<String>): DataFrame {
+        return data.builder().run {
+            data.variables().forEach { variable ->
+                if (variable.name in dateTimeVars) {
+                    remove(variable)
+                    putDateTime(variable, data[variable])
+                }
+            }
+            build()
+        }
     }
 }

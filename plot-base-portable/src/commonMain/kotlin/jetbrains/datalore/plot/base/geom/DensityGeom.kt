@@ -6,14 +6,18 @@
 package jetbrains.datalore.plot.base.geom
 
 import jetbrains.datalore.plot.base.DataPointAesthetics
-import jetbrains.datalore.plot.base.geom.util.HintColorUtil.fromColor
+import jetbrains.datalore.plot.base.GeomContext
+import jetbrains.datalore.plot.base.GeomKind.DENSITY
+import jetbrains.datalore.plot.base.geom.util.HintColorUtil
 import jetbrains.datalore.plot.base.interact.GeomTargetCollector.TooltipParams
-import jetbrains.datalore.plot.base.interact.GeomTargetCollector.TooltipParams.Companion.params
+import jetbrains.datalore.plot.base.interact.GeomTargetCollector.TooltipParams.Companion.tooltip
 
 class DensityGeom : AreaGeom() {
 
-    override fun setupTooltipParams(aes: DataPointAesthetics): TooltipParams {
-        return params().setColor(fromColor(aes))
+    override fun setupTooltipParams(aes: DataPointAesthetics, ctx: GeomContext): TooltipParams {
+        return tooltip {
+            markerColors = HintColorUtil.createColorMarkerMapper(DENSITY, ctx)(aes)
+        }
     }
 
     companion object {

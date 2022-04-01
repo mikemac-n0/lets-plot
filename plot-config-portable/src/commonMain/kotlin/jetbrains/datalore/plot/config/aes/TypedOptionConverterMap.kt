@@ -8,6 +8,7 @@ package jetbrains.datalore.plot.config.aes
 import jetbrains.datalore.plot.base.Aes
 import jetbrains.datalore.plot.base.Aes.Companion.ALPHA
 import jetbrains.datalore.plot.base.Aes.Companion.ANGLE
+import jetbrains.datalore.plot.base.Aes.Companion.BINWIDTH
 import jetbrains.datalore.plot.base.Aes.Companion.COLOR
 import jetbrains.datalore.plot.base.Aes.Companion.FAMILY
 import jetbrains.datalore.plot.base.Aes.Companion.FILL
@@ -26,9 +27,11 @@ import jetbrains.datalore.plot.base.Aes.Companion.SHAPE
 import jetbrains.datalore.plot.base.Aes.Companion.SIZE
 import jetbrains.datalore.plot.base.Aes.Companion.SLOPE
 import jetbrains.datalore.plot.base.Aes.Companion.SPEED
+import jetbrains.datalore.plot.base.Aes.Companion.STACKSIZE
 import jetbrains.datalore.plot.base.Aes.Companion.SYM_X
 import jetbrains.datalore.plot.base.Aes.Companion.SYM_Y
 import jetbrains.datalore.plot.base.Aes.Companion.UPPER
+import jetbrains.datalore.plot.base.Aes.Companion.VIOLINWIDTH
 import jetbrains.datalore.plot.base.Aes.Companion.VJUST
 import jetbrains.datalore.plot.base.Aes.Companion.WEIGHT
 import jetbrains.datalore.plot.base.Aes.Companion.WIDTH
@@ -62,8 +65,11 @@ internal class TypedOptionConverterMap {
         this.put(LINETYPE, LINETYPE_CVT)
 
         this.put(SIZE, DOUBLE_CVT)
+        this.put(STACKSIZE, DOUBLE_CVT)
         this.put(WIDTH, DOUBLE_CVT)
         this.put(HEIGHT, DOUBLE_CVT)
+        this.put(BINWIDTH, DOUBLE_CVT)
+        this.put(VIOLINWIDTH, DOUBLE_CVT)
         this.put(WEIGHT, DOUBLE_CVT)
         this.put(INTERCEPT, DOUBLE_CVT)
         this.put(SLOPE, DOUBLE_CVT)

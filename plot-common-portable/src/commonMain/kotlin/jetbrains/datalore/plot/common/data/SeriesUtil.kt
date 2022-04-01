@@ -5,26 +5,33 @@
 
 package jetbrains.datalore.plot.common.data
 
-import jetbrains.datalore.base.gcommon.collect.ClosedRange
+import jetbrains.datalore.base.interval.DoubleSpan
 import jetbrains.datalore.base.gcommon.collect.Iterables
 import jetbrains.datalore.base.gcommon.collect.Ordering
+import kotlin.math.log10
 import kotlin.math.max
 import kotlin.math.min
 
 
 object SeriesUtil {
     const val TINY = 1e-50
+    private const val MAX_DECIMAL_PLACES = 12
 
     private val REAL_NUMBER = { it: Double? -> isFinite(it) }
 
     val NEGATIVE_NUMBER = { input: Double -> input < 0 }
 
-    fun isSubTiny(value: Double): Boolean {
-        return value < TINY
+    fun isBeyondPrecision(range: DoubleSpan): Boolean {
+        val delta = span(range)
+        return delta < TINY ||                       // ??
+                isBeyondPrecision(range.lowerEnd, delta) ||
+                isBeyondPrecision(range.upperEnd, delta)
     }
 
-    fun isSubTiny(range: ClosedRange<Double>): Boolean {
-        return isFinite(range) && span(range) < TINY
+    fun isBeyondPrecision(base: Double, delta: Double): Boolean {
+        val basePower = log10(base)
+        val deltaPower = log10(delta)
+        return (basePower - deltaPower) > MAX_DECIMAL_PLACES
     }
 
     fun checkedDoubles(values: Iterable<*>): CheckedDoubleIterable {
@@ -102,7 +109,7 @@ object SeriesUtil {
         }
     }
 
-    fun range(values: Iterable<Double?>): ClosedRange<Double>? {
+    fun range(values: Iterable<Double?>): DoubleSpan? {
         var min = 0.0
         var max = 0.0
         var inited = false
@@ -119,7 +126,7 @@ object SeriesUtil {
             }
         }
         return if (inited)
-            ClosedRange(min, max)
+            DoubleSpan(min, max)
         else
             null
     }
@@ -176,37 +183,41 @@ object SeriesUtil {
      * ToDo: Use with caution.
      * ToDo: The correct method of domain validation is temporarily in 'Transforms.ensureApplicableDomain'.
      */
-    fun ensureApplicableRange(range: ClosedRange<Double>?): ClosedRange<Double> {
+    fun ensureApplicableRange(
+        range: DoubleSpan?,
+        preferableNullRange: DoubleSpan? = null
+    ): DoubleSpan {
         if (range == null) {
-            return ClosedRange(-0.5, 0.5)
+            return preferableNullRange ?: DoubleSpan(-0.5, 0.5)
         }
-        if (isSubTiny(range)) {
+//        if (isSubTiny(range)) {
+        if (isBeyondPrecision(range)) {
             val median = range.lowerEnd
-            return ClosedRange(median - 0.5, median + 0.5)
+            return DoubleSpan(median - 0.5, median + 0.5)
         }
         return range
     }
 
-    fun span(range: ClosedRange<Double>): Double {
+    fun span(range: DoubleSpan): Double {
         require(isFinite(range)) { "range must be finite: $range" }
         return range.upperEnd - range.lowerEnd
     }
 
-    fun span(range0: ClosedRange<Double>?, range1: ClosedRange<Double>?): ClosedRange<Double>? {
+    fun span(range0: DoubleSpan?, range1: DoubleSpan?): DoubleSpan? {
         if (range0 == null) return range1
-        return if (range1 == null) range0 else range0.span(range1)
+        return if (range1 == null) range0 else range0.union(range1)
     }
 
-    fun expand(range: ClosedRange<Double>, newSpan: Double): ClosedRange<Double> {
+    fun expand(range: DoubleSpan, newSpan: Double): DoubleSpan {
         val expand = (newSpan - span(range)) / 2
         return expand(range, expand, expand)
     }
 
-    fun expand(range: ClosedRange<Double>, lowerExpand: Double, upperExpand: Double): ClosedRange<Double> {
-        return ClosedRange(range.lowerEnd - lowerExpand, range.upperEnd + upperExpand)
+    fun expand(range: DoubleSpan, lowerExpand: Double, upperExpand: Double): DoubleSpan {
+        return DoubleSpan(range.lowerEnd - lowerExpand, range.upperEnd + upperExpand)
     }
 
-    fun isFinite(range: ClosedRange<Double>): Boolean {
+    fun isFinite(range: DoubleSpan): Boolean {
         return !(range.lowerEnd.isInfinite() || range.upperEnd.isInfinite())
     }
 
@@ -230,6 +241,7 @@ object SeriesUtil {
         return result
     }
 
+    // ToDo: see Kotlin `slice()`
     fun <T> pickAtIndices(list: List<T>, indices: List<Int>): List<T> {
         val initialCapacity = if (indices.size > 10) indices.size else 10
         val result = ArrayList<T>(initialCapacity)
@@ -241,6 +253,7 @@ object SeriesUtil {
         return result
     }
 
+    // ToDo: see Kotlin `slice()`
     fun <T> pickAtIndices(list: List<T>, indices: Set<Int>): List<T> {
         val result = ArrayList<T>(list.size)
         for (i in list.indices) {

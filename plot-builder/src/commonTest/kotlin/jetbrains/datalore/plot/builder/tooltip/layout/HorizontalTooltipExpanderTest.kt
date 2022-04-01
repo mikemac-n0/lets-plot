@@ -6,6 +6,7 @@
 package jetbrains.datalore.plot.builder.tooltip.layout
 
 import jetbrains.datalore.base.geometry.DoubleVector
+import jetbrains.datalore.base.geometry.DoubleVector.Companion.ZERO
 import jetbrains.datalore.base.values.Color
 import jetbrains.datalore.plot.base.interact.TipLayoutHint
 import jetbrains.datalore.plot.builder.interact.TooltipSpec
@@ -190,12 +191,11 @@ class HorizontalTooltipExpanderTest {
 
     private fun newTooltip(text: String, size: DoubleVector, position: DoubleVector, pointer: DoubleVector): PositionedTooltip {
         val spec = TooltipSpec(
-            layoutHint = TipLayoutHint.cursorTooltip(
-                DoubleVector.ZERO,
-                Color.BLACK
-            ),
+            layoutHint = TipLayoutHint.cursorTooltip(ZERO),
+            title = null,
             lines = listOf(TooltipSpec.Line.withValue(text)),
             fill = Color.BLACK,
+            markerColors = emptyList(),
             isOutlier = true
         )
         return PositionedTooltip(

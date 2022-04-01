@@ -5,10 +5,10 @@
 
 package jetbrains.datalore.plot.builder.layout.axis.label
 
-import jetbrains.datalore.base.gcommon.collect.ClosedRange
+import jetbrains.datalore.base.interval.DoubleSpan
 import jetbrains.datalore.base.geometry.DoubleRectangle
 import jetbrains.datalore.base.geometry.DoubleVector
-import jetbrains.datalore.plot.base.render.svg.TextLabel
+import jetbrains.datalore.plot.base.render.svg.Text
 import jetbrains.datalore.plot.base.scale.ScaleBreaks
 import jetbrains.datalore.plot.builder.guide.Orientation
 import jetbrains.datalore.plot.builder.presentation.PlotLabelSpec
@@ -16,7 +16,7 @@ import jetbrains.datalore.plot.builder.theme.AxisTheme
 
 internal class HorizontalMultilineLabelsLayout(
     orientation: Orientation,
-    axisDomain: ClosedRange<Double>,
+    axisDomain: DoubleSpan,
     labelSpec: PlotLabelSpec,
     breaks: ScaleBreaks,
     theme: AxisTheme,
@@ -61,7 +61,7 @@ internal class HorizontalMultilineLabelsLayout(
                 var shelfBounds = boundsByShelfIndex[shelfIndex]!!
                 // not overlapped?
                 if (!shelfBounds.xRange()
-                        .isConnected(ClosedRange(labelBounds.left - MIN_DISTANCE, labelBounds.right + MIN_DISTANCE))
+                        .connected(DoubleSpan(labelBounds.left - MIN_DISTANCE, labelBounds.right + MIN_DISTANCE))
                 ) {
                     myShelfIndexForTickIndex.add(shelfIndex)
                     shelfBounds = shelfBounds.union(labelBounds)
@@ -90,8 +90,8 @@ internal class HorizontalMultilineLabelsLayout(
             .smallFont(false)
             .overlap(linesCount > myMaxLines)
             .labelAdditionalOffsets(labelAdditionalOffsets)
-            .labelHorizontalAnchor(TextLabel.HorizontalAnchor.MIDDLE)
-            .labelVerticalAnchor(TextLabel.VerticalAnchor.TOP)
+            .labelHorizontalAnchor(Text.HorizontalAnchor.MIDDLE)
+            .labelVerticalAnchor(Text.VerticalAnchor.TOP)
             .build()
     }
 

@@ -5,58 +5,37 @@
 
 package jetbrains.datalore.plot.base.scale
 
-import jetbrains.datalore.base.gcommon.collect.ClosedRange
+import jetbrains.datalore.base.interval.DoubleSpan
 import jetbrains.datalore.plot.base.ContinuousTransform
+import jetbrains.datalore.plot.base.ScaleMapper
 import kotlin.math.max
 import kotlin.math.min
 
 object MapperUtil {
-    fun map(r: ClosedRange<Double>, mapper: (Double?) -> Double?): ClosedRange<Double> {
+    fun map(r: DoubleSpan, mapper: ScaleMapper<Double>): DoubleSpan {
         val a = mapper(r.lowerEnd)!!
         val b = mapper(r.upperEnd)!!
-        return ClosedRange(min(a, b), max(a, b))
+        return DoubleSpan(min(a, b), max(a, b))
     }
 
-    fun mapDiscreteDomainValuesToNumbers(values: Collection<*>): Map<Any, Double> {
-        return mapDiscreteDomainValuesToIndices(values)
-    }
-
-    private fun mapDiscreteDomainValuesToIndices(values: Collection<*>): Map<Any, Double> {
-        val result = LinkedHashMap<Any, Double>()
-        var index = 0
-        for (v in values) {
-            if (v != null && !result.containsKey(v)) {
-                result[v] = index++.toDouble()
-            }
-        }
-        return result
-    }
-
-    fun rangeWithLimitsAfterTransform(
-        dataRange: ClosedRange<Double>,
-        lowerLimit: Double?,
-        upperLimit: Double?,
+    fun rangeWithLimitsAfterTransform2(
+        dataRange: DoubleSpan,
         trans: ContinuousTransform
-    ): ClosedRange<Double> {
-        val lower = if (lowerLimit != null && lowerLimit.isFinite()) {
-            lowerLimit
-        } else {
-            dataRange.lowerEnd
+    ): DoubleSpan {
+        check(trans.isInDomain(dataRange.lowerEnd)) {
+            "[${trans::class.simpleName}] Lower end ${dataRange.lowerEnd} is outside of transform's domain."
         }
-        check(trans.isInDomain(lower)) {
-            "[${trans::class.simpleName}] Lower end $lower is outside of transform's domain."
+        check(trans.isInDomain(dataRange.upperEnd)) {
+            "[${trans::class.simpleName}] Upper end ${dataRange.upperEnd} is outside of transform's domain."
         }
 
-        val upper = if (upperLimit != null && upperLimit.isFinite()) {
-            upperLimit
-        } else {
-            dataRange.upperEnd
-        }
-        check(trans.isInDomain(upper)) {
-            "[${trans::class.simpleName}] Lower end $upper is outside of transform's domain."
-        }
+        val transformedLimits = listOf(
+            trans.apply(trans.definedLimits().first),
+            trans.apply(trans.definedLimits().second),
+            trans.apply(dataRange.lowerEnd),
+            trans.apply(dataRange.upperEnd),
+        )
 
-        val limits = listOf(lower, upper)
-        return ClosedRange.encloseAll(trans.apply(limits))
+        return DoubleSpan.encloseAll(transformedLimits)
     }
 }

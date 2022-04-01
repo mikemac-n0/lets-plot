@@ -5,7 +5,7 @@
 
 package jetbrains.datalore.plot.base.stat
 
-import jetbrains.datalore.base.gcommon.collect.ClosedRange
+import jetbrains.datalore.base.interval.DoubleSpan
 import jetbrains.datalore.plot.common.data.SeriesUtil
 import kotlin.math.*
 
@@ -70,6 +70,24 @@ object DensityStatUtil {
         }
     }
 
+    internal fun densityFunction(
+        values: List<Double>,
+        weights: List<Double>,
+        bw: Double?,
+        bwMethod: DensityStat.BandWidthMethod,
+        ad: Double,
+        ker: DensityStat.Kernel,
+        fullScanMax: Int
+    ): (Double) -> Double {
+        val bandWidth = bw ?: bandWidth(bwMethod, values)
+        val kernelFun: (Double) -> Double = kernel(ker)
+
+        return when (values.size <= fullScanMax) {
+            true -> densityFunctionFullScan(values, weights, kernelFun, bandWidth, ad)
+            false -> densityFunctionFast(values, weights, kernelFun, bandWidth, ad)
+        }
+    }
+
     internal fun densityFunctionFullScan(
         xs: List<Double>,
         weights: List<Double>,
@@ -115,7 +133,7 @@ object DensityStatUtil {
         }
     }
 
-    fun createStepValues(range: ClosedRange<Double>, n: Int): List<Double> {
+    fun createStepValues(range: DoubleSpan, n: Int): List<Double> {
         val x = ArrayList<Double>()
         var min = range.lowerEnd
         var max = range.upperEnd

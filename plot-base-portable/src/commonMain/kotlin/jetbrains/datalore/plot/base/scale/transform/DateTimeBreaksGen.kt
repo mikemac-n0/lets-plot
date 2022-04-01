@@ -5,7 +5,7 @@
 
 package jetbrains.datalore.plot.base.scale.transform
 
-import jetbrains.datalore.base.gcommon.collect.ClosedRange
+import jetbrains.datalore.base.interval.DoubleSpan
 import jetbrains.datalore.plot.base.scale.BreaksGenerator
 import jetbrains.datalore.plot.base.scale.ScaleBreaks
 import jetbrains.datalore.plot.base.scale.breaks.DateTimeBreaksHelper
@@ -14,7 +14,7 @@ class DateTimeBreaksGen(
     private val labelFormatter: ((Any) -> String)? = null,
     private val valueFormatter: ((Any) -> String)? = null
 ) : BreaksGenerator {
-    override fun generateBreaks(domain: ClosedRange<Double>, targetCount: Int): ScaleBreaks {
+    override fun generateBreaks(domain: DoubleSpan, targetCount: Int): ScaleBreaks {
         val helper = breaksHelper(domain, targetCount)
         val ticks = helper.breaks
         val labels = ticks.map {
@@ -25,7 +25,7 @@ class DateTimeBreaksGen(
     }
 
     private fun breaksHelper(
-        domainAfterTransform: ClosedRange<Double>,
+        domainAfterTransform: DoubleSpan,
         targetCount: Int
     ): DateTimeBreaksHelper {
         return DateTimeBreaksHelper(
@@ -35,11 +35,11 @@ class DateTimeBreaksGen(
         )
     }
 
-    override fun labelFormatter(domain: ClosedRange<Double>, targetCount: Int): (Any) -> String {
+    override fun labelFormatter(domain: DoubleSpan, targetCount: Int): (Any) -> String {
         return labelFormatter ?: defaultFormatter(domain, targetCount)
     }
 
-    override fun defaultFormatter(domain: ClosedRange<Double>, targetCount: Int): (Any) -> String {
+    override fun defaultFormatter(domain: DoubleSpan, targetCount: Int): (Any) -> String {
         return breaksHelper(domain, targetCount).formatter
     }
 }

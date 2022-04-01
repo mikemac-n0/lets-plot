@@ -5,7 +5,7 @@
 
 package jetbrains.datalore.plot.base.scale.transform
 
-import jetbrains.datalore.base.gcommon.collect.ClosedRange
+import jetbrains.datalore.base.interval.DoubleSpan
 import jetbrains.datalore.plot.base.scale.BreaksGenerator
 import jetbrains.datalore.plot.base.scale.ScaleBreaks
 import jetbrains.datalore.plot.base.scale.breaks.LinearBreaksHelper
@@ -18,7 +18,7 @@ internal class LinearBreaksGen(
     private val valueFormatter: ((Any) -> String)? = null
 ) : BreaksGenerator {
 
-    override fun generateBreaks(domain: ClosedRange<Double>, targetCount: Int): ScaleBreaks {
+    override fun generateBreaks(domain: DoubleSpan, targetCount: Int): ScaleBreaks {
         val breaks = generateBreakValues(domain, targetCount)
         val defaultFormatter = createFormatter(breaks)
         val labels = breaks.map {
@@ -28,16 +28,16 @@ internal class LinearBreaksGen(
         return ScaleBreaks(breaks, breaks, labels)
     }
 
-    override fun labelFormatter(domain: ClosedRange<Double>, targetCount: Int): (Any) -> String {
+    override fun labelFormatter(domain: DoubleSpan, targetCount: Int): (Any) -> String {
         return formatter ?: defaultFormatter(domain, targetCount)
     }
 
-    override fun defaultFormatter(domain: ClosedRange<Double>, targetCount: Int): (Any) -> String {
+    override fun defaultFormatter(domain: DoubleSpan, targetCount: Int): (Any) -> String {
         return createFormatter(generateBreakValues(domain, targetCount))
     }
 
     companion object {
-        internal fun generateBreakValues(domain: ClosedRange<Double>, targetCount: Int): List<Double> {
+        internal fun generateBreakValues(domain: DoubleSpan, targetCount: Int): List<Double> {
             val helper = LinearBreaksHelper(
                 domain.lowerEnd,
                 domain.upperEnd,

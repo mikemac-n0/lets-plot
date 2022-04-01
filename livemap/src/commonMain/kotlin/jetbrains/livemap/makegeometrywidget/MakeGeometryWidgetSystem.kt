@@ -50,7 +50,7 @@ class MakeGeometryWidgetSystem(
     private fun createVisualEntities(lonlat: LonLatPoint, widgetLayer: EcsEntity) {
         val factory = MapEntityFactory(widgetLayer)
 
-        PointBuilder(factory, zoomable = false)
+        PointBuilder(factory)
             .apply {
                 point = lonlat
                 strokeColor = DARK_ORANGE
@@ -59,18 +59,19 @@ class MakeGeometryWidgetSystem(
             .build(nonInteractive = true)
 
         if (widgetLayer.count() > 0) {
-            PathBuilder(factory, myMapProjection, zoomable = false)
+            PathBuilder(factory, myMapProjection)
                 .apply {
-                    geometry(listOf(widgetLayer.last(), lonlat), false)
+                    sizeScalingRange = null
                     strokeColor = DARK_ORANGE
                     strokeWidth = 1.5
+                    geometry(listOf(widgetLayer.last(), lonlat), false)
                 }
                 .build(true)
         }
     }
 
     private fun getWidgetLayer(): EcsEntity? = myComponentManager.tryGetSingletonEntity(WIDGET_COMPONENTS)
-    private fun EcsEntity.click(): InputMouseEvent? = get<MouseInputComponent>().click
+    private fun EcsEntity.click(): InputMouseEvent? = get<MouseInputComponent>().clickEvent
     private fun EcsEntity.count(): Int = get<MakeGeometryWidgetComponent>().points.count()
     private fun EcsEntity.last(): LonLatPoint = get<MakeGeometryWidgetComponent>().points.last()
     private fun EcsEntity.add(point: LonLatPoint) = get<MakeGeometryWidgetComponent>().points.add(point)

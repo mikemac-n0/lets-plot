@@ -5,7 +5,7 @@
 
 package jetbrains.datalore.plot.builder.scale.provider
 
-import jetbrains.datalore.base.gcommon.collect.ClosedRange
+import jetbrains.datalore.base.interval.DoubleSpan
 import jetbrains.datalore.plot.base.ContinuousTransform
 import jetbrains.datalore.plot.base.scale.MapperUtil
 import jetbrains.datalore.plot.builder.scale.ContinuousOnlyMapperProvider
@@ -19,14 +19,8 @@ open class DirectlyProportionalMapperProvider(
     private val max: Double,
     naValue: Double
 ) : ContinuousOnlyMapperProvider<Double>(naValue) {
-
-    override fun createContinuousMapper(
-        domain: ClosedRange<Double>,
-        lowerLimit: Double?,
-        upperLimit: Double?,
-        trans: ContinuousTransform
-    ): GuideMapper<Double> {
-        val dataMax = MapperUtil.rangeWithLimitsAfterTransform(domain, lowerLimit, upperLimit, trans).upperEnd
-        return GuideMappers.continuousToContinuous(ClosedRange(0.0, dataMax), ClosedRange(0.0, max), naValue)
+    override fun createContinuousMapper(domain: DoubleSpan, trans: ContinuousTransform): GuideMapper<Double> {
+        val dataMax = MapperUtil.rangeWithLimitsAfterTransform2(domain, trans).upperEnd
+        return GuideMappers.continuousToContinuous(DoubleSpan(0.0, dataMax), DoubleSpan(0.0, max), naValue)
     }
 }

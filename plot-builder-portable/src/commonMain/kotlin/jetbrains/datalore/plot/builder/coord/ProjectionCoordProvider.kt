@@ -5,9 +5,10 @@
 
 package jetbrains.datalore.plot.builder.coord
 
-import jetbrains.datalore.base.gcommon.collect.ClosedRange
+import jetbrains.datalore.base.interval.DoubleSpan
 import jetbrains.datalore.base.geometry.DoubleVector
 import jetbrains.datalore.plot.base.Scale
+import jetbrains.datalore.plot.base.ScaleMapper
 import jetbrains.datalore.plot.base.coord.Projection
 import jetbrains.datalore.plot.base.scale.Mappers
 import jetbrains.datalore.plot.base.scale.ScaleBreaks
@@ -17,23 +18,23 @@ import kotlin.math.abs
 internal class ProjectionCoordProvider(
     private val projectionX: Projection,
     private val projectionY: Projection,
-    xLim: ClosedRange<Double>?,
-    yLim: ClosedRange<Double>?,
+    xLim: DoubleSpan?,
+    yLim: DoubleSpan?,
     flipped: Boolean
 ) : CoordProviderBase(xLim, yLim, flipped) {
 
     override fun with(
-        xLim: ClosedRange<Double>?,
-        yLim: ClosedRange<Double>?,
+        xLim: DoubleSpan?,
+        yLim: DoubleSpan?,
         flipped: Boolean
     ): CoordProvider {
         return ProjectionCoordProvider(projectionX, projectionY, xLim, yLim, flipped)
     }
 
     protected override fun adjustDomainsIntern(
-        hDomain: ClosedRange<Double>,
-        vDomain: ClosedRange<Double>
-    ): Pair<ClosedRange<Double>, ClosedRange<Double>> {
+        hDomain: DoubleSpan,
+        vDomain: DoubleSpan
+    ): Pair<DoubleSpan, DoubleSpan> {
         @Suppress("NAME_SHADOWING")
         val xDomain = projectionX.toValidDomain(hDomain)
 
@@ -43,8 +44,8 @@ internal class ProjectionCoordProvider(
     }
 
     override fun adjustGeomSize(
-        hDomain: ClosedRange<Double>,
-        vDomain: ClosedRange<Double>,
+        hDomain: DoubleSpan,
+        vDomain: DoubleSpan,
         geomSize: DoubleVector
     ): DoubleVector {
         // Adjust geom dimensions ratio.
@@ -59,8 +60,7 @@ internal class ProjectionCoordProvider(
 
     override fun buildAxisScaleX(
         scaleProto: Scale<Double>,
-        domain: ClosedRange<Double>,
-        axisLength: Double,
+        domain: DoubleSpan,
         breaks: ScaleBreaks
     ): Scale<Double> {
         return if (projectionX.nonlinear) {
@@ -68,18 +68,16 @@ internal class ProjectionCoordProvider(
                 projectionX,
                 scaleProto,
                 domain,
-                axisLength,
                 breaks
             )
         } else {
-            super.buildAxisScaleX(scaleProto, domain, axisLength, breaks)
+            super.buildAxisScaleX(scaleProto, domain, breaks)
         }
     }
 
     override fun buildAxisScaleY(
         scaleProto: Scale<Double>,
-        domain: ClosedRange<Double>,
-        axisLength: Double,
+        domain: DoubleSpan,
         breaks: ScaleBreaks
     ): Scale<Double> {
         return if (projectionY.nonlinear) {
@@ -87,48 +85,54 @@ internal class ProjectionCoordProvider(
                 projectionY,
                 scaleProto,
                 domain,
-                axisLength,
                 breaks
             )
         } else {
-            super.buildAxisScaleY(scaleProto, domain, axisLength, breaks)
+            super.buildAxisScaleY(scaleProto, domain, breaks)
         }
     }
+
+    override fun buildAxisXScaleMapper(domain: DoubleSpan, axisLength: Double): ScaleMapper<Double> {
+        return if (projectionX.nonlinear) {
+            buildAxisScaleMapperWithProjection(
+                projectionX,
+                domain,
+                axisLength,
+            )
+        } else {
+            super.buildAxisXScaleMapper(domain, axisLength)
+        }
+    }
+
+    override fun buildAxisYScaleMapper(domain: DoubleSpan, axisLength: Double): ScaleMapper<Double> {
+        return if (projectionY.nonlinear) {
+            buildAxisScaleMapperWithProjection(
+                projectionY,
+                domain,
+                axisLength,
+            )
+        } else {
+            super.buildAxisXScaleMapper(domain, axisLength)
+        }
+    }
+
 
     companion object {
         private fun buildAxisScaleWithProjection(
             projection: Projection, scaleProto: Scale<Double>,
-            domain: ClosedRange<Double>,
-            axisLength: Double,
+            domain: DoubleSpan,
             breaks: ScaleBreaks
         ): Scale<Double> {
 
             val validDomain = projection.toValidDomain(domain)
-            val validDomainProjected = ClosedRange(
-                projection.apply(validDomain.lowerEnd),
-                projection.apply(validDomain.upperEnd)
-            )
-
-            val projectionInverse = Mappers.linear(validDomainProjected, validDomain)
-
-            val linearMapper = linearMapper(
-                domain,
-                axisLength
-            )
-            val scaleMapper = twistScaleMapper(
-                projection,
-                projectionInverse,
-                linearMapper
-            )
             val validBreaks = validateBreaks(validDomain, breaks)
             return buildAxisScaleDefault(
                 scaleProto,
-                scaleMapper,
                 validBreaks
             )
         }
 
-        private fun validateBreaks(validDomain: ClosedRange<Double>, breaks: ScaleBreaks): ScaleBreaks {
+        private fun validateBreaks(validDomain: DoubleSpan, breaks: ScaleBreaks): ScaleBreaks {
             val validIndices = ArrayList<Int>()
             var i = 0
             for (v in breaks.domainValues) {
@@ -152,15 +156,42 @@ internal class ProjectionCoordProvider(
             )
         }
 
+        private fun buildAxisScaleMapperWithProjection(
+            projection: Projection,
+            domain: DoubleSpan,
+            axisLength: Double,
+        ): ScaleMapper<Double> {
+            val linearMapper = linearMapper(
+                domain,
+                axisLength
+            )
+
+            val validDomain = projection.toValidDomain(domain)
+            val validDomainProjected = DoubleSpan(
+                projection.apply(validDomain.lowerEnd),
+                projection.apply(validDomain.upperEnd)
+            )
+
+            val projectionInverse = Mappers.linear(validDomainProjected, validDomain)
+            return twistScaleMapper(
+                projection,
+                projectionInverse,
+                linearMapper
+            )
+        }
+
         private fun twistScaleMapper(
-            projection: Projection, projectionInverse: (Double) -> Double,
-            scaleMapper: (Double?) -> Double?
-        ): (Double?) -> Double? {
-            return { v ->
-                v?.run {
-                    val projected = projection.apply(v)
-                    val unProjected = projectionInverse(projected)
-                    scaleMapper(unProjected)
+            projection: Projection,
+            projectionInverse: ScaleMapper<Double>,
+            scaleMapper: ScaleMapper<Double>
+        ): ScaleMapper<Double> {
+            return object : ScaleMapper<Double> {
+                override fun invoke(v: Double?): Double? {
+                    return v?.let {
+                        val projected = projection.apply(it)
+                        val unProjected = projectionInverse(projected)
+                        scaleMapper(unProjected)
+                    }
                 }
             }
         }

@@ -5,8 +5,9 @@
 
 package jetbrains.datalore.plot.builder.layout.axis
 
-import jetbrains.datalore.base.gcommon.collect.ClosedRange
+import jetbrains.datalore.base.interval.DoubleSpan
 import jetbrains.datalore.base.geometry.DoubleRectangle
+import jetbrains.datalore.plot.base.ScaleMapper
 import jetbrains.datalore.plot.base.scale.Mappers
 import jetbrains.datalore.plot.builder.layout.AxisLayoutInfo
 import jetbrains.datalore.plot.builder.layout.axis.label.AxisLabelsLayout
@@ -14,7 +15,7 @@ import jetbrains.datalore.plot.builder.theme.AxisTheme
 
 abstract class AxisLayouter(
     val orientation: jetbrains.datalore.plot.builder.guide.Orientation,
-    private val domainRange: ClosedRange<Double>,
+    private val domainRange: DoubleSpan,
     private val labelsLayout: AxisLabelsLayout
 ) {
 
@@ -41,14 +42,14 @@ abstract class AxisLayouter(
 
     protected abstract fun toAxisMapper(axisLength: Double): (Double?) -> Double?
 
-    protected fun toScaleMapper(axisLength: Double): (Double?) -> Double? {
+    protected fun toScaleMapper(axisLength: Double): ScaleMapper<Double> {
         return Mappers.mul(domainRange, axisLength)
     }
 
     companion object {
         fun create(
             orientation: jetbrains.datalore.plot.builder.guide.Orientation,
-            axisDomain: ClosedRange<Double>, breaksProvider: AxisBreaksProvider, theme: AxisTheme
+            axisDomain: DoubleSpan, breaksProvider: AxisBreaksProvider, theme: AxisTheme
         ): AxisLayouter {
 
             if (orientation.isHorizontal) {

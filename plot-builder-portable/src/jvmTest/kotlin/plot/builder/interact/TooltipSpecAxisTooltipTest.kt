@@ -56,7 +56,7 @@ class TooltipSpecAxisTooltipTest : jetbrains.datalore.plot.builder.interact.Tool
                     Aes.FILL, TipLayoutHint.verticalTooltip(
                         TARGET_HIT_COORD,
                         OBJECT_RADIUS,
-                        FILL_COLOR
+                        markerColors = emptyList()
                     )
                 )
                 .build()

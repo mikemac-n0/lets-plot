@@ -5,20 +5,23 @@
 
 package jetbrains.datalore.plot.base.geom.util
 
+import jetbrains.datalore.base.values.Color
 import jetbrains.datalore.plot.base.DataPointAesthetics
 import jetbrains.datalore.plot.base.geom.util.MultiPointDataConstructor.reducer
 import jetbrains.datalore.plot.base.geom.util.MultiPointDataConstructor.singlePointAppender
 import jetbrains.datalore.plot.base.interact.GeomTargetCollector
-import jetbrains.datalore.plot.base.interact.GeomTargetCollector.TooltipParams.Companion.params
+import jetbrains.datalore.plot.base.interact.GeomTargetCollector.TooltipParams.Companion.tooltip
+import jetbrains.datalore.plot.base.interact.TipLayoutHint
 import jetbrains.datalore.plot.base.render.svg.LinePath
 
 class LinePathConstructor(
     private val myTargetCollector: GeomTargetCollector,
     private val myDataPoints: Iterable<DataPointAesthetics>,
     private val myLinesHelper: LinesHelper,
-    private val myClosePath: Boolean
+    private val myClosePath: Boolean,
+    private val myColorsByDataPoint: (DataPointAesthetics) -> List<Color>,
+    private val myFlipped: Boolean
 ) {
-
     fun construct(): List<LinePath> {
         val linePaths = ArrayList<LinePath>()
         val multiPointDataList = createMultiPointDataByGroup()
@@ -34,21 +37,22 @@ class LinePathConstructor(
             myTargetCollector.addPolygon(
                 multiPointData.points,
                 multiPointData.localToGlobalIndex,
-                params().setColor(
-                    HintColorUtil.fromFill(
-                        multiPointData.aes
-                    )
-                )
+                tooltip {
+                    markerColors = myColorsByDataPoint(multiPointData.aes)
+                }
             )
         } else {
             myTargetCollector.addPath(
                 multiPointData.points,
                 multiPointData.localToGlobalIndex,
-                params().setColor(
-                    HintColorUtil.fromColor(
-                        multiPointData.aes
-                    )
-                )
+                tooltip {
+                    markerColors = myColorsByDataPoint(multiPointData.aes)
+                },
+                if (myFlipped) {
+                    TipLayoutHint.Kind.VERTICAL_TOOLTIP
+                } else {
+                    TipLayoutHint.Kind.HORIZONTAL_TOOLTIP
+                }
             )
         }
     }

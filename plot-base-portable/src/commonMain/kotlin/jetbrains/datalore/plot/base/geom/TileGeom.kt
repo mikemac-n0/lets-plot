@@ -34,15 +34,12 @@ open class TileGeom : GeomBase() {
         )
         root.add(wrap(slimGroup))
 
+        val colorsByDataPoint = HintColorUtil.createColorMarkerMapper(GeomKind.TILE, ctx)
         RectTargetCollectorHelper(
             helper,
             rectangleByDataPoint(ctx),
-            { p: DataPointAesthetics ->
-                HintColorUtil.fromFill(
-                    p
-                )
-            },
-            TipLayoutHint.Kind.CURSOR_TOOLTIP
+            TipLayoutHint.Kind.CURSOR_TOOLTIP,
+            colorsByDataPoint
         )
             .collectTo(ctx.targetCollector)
     }

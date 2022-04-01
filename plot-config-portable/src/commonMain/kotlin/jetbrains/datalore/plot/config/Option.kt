@@ -57,6 +57,17 @@ object Option {
             const val ORDER_BY = "order_by"
             const val ORDER = "order"
         }
+
+        object SeriesAnnotation {
+            const val TAG = "series_annotations"
+            const val COLUMN = "column"
+            const val TYPE = "type"
+
+            object DateTime {
+                const val DATE_TIME = "datetime"
+                const val TIME_ZONE = "time_zone"
+            }
+        }
     }
 
     object GGBunch {
@@ -82,6 +93,9 @@ object Option {
         const val SCALES = "scales"
         const val TITLE = "ggtitle"
         const val TITLE_TEXT = "text"
+        const val SUBTITLE_TEXT = "subtitle"
+        const val CAPTION = "caption"
+        const val CAPTION_TEXT = "text"
         const val COORD = "coord"
         const val FACET = "facet"
         const val THEME = "theme"
@@ -103,7 +117,7 @@ object Option {
         const val TOOLTIP_FORMATS = "tooltip_formats"
         const val TOOLTIP_ANCHOR = "tooltip_anchor"
         const val TOOLTIP_MIN_WIDTH = "tooltip_min_width"
-        const val TOOLTIP_COLOR = "tooltip_color"
+        const val TOOLTIP_TITLE = "tooltip_title"
         const val NONE = "none"
         const val MAP_JOIN = "map_join"
     }
@@ -114,6 +128,14 @@ object Option {
     }
 
     object Geom {
+
+        object Dotplot {
+            const val DOTSIZE = "dotsize"
+            const val STACKRATIO = "stackratio"
+            const val STACKGROUPS = "stackgroups"
+            const val STACKDIR = "stackdir"
+            const val METHOD = "method"
+        }
 
         object Choropleth {
             const val GEO_POSITIONS = "map"
@@ -136,6 +158,18 @@ object Option {
             const val FILL = "outlier_fill"
             const val SHAPE = "outlier_shape"
             const val SIZE = "outlier_size"
+        }
+
+        object Violin {
+            const val DRAW_QUANTILES = "draw_quantiles"
+        }
+
+        object YDotplot {
+            const val DOTSIZE = "dotsize"
+            const val STACKRATIO = "stackratio"
+            const val STACKGROUPS = "stackgroups"
+            const val STACKDIR = "stackdir"
+            const val METHOD = "method"
         }
 
         object Jitter {
@@ -177,12 +211,15 @@ object Option {
             const val LOCATION = "location"
             const val ZOOM = "zoom"
             const val STROKE = "stroke"
-            const val SCALED = "scaled"
             const val CLUSTERING = "clustering"
             const val LABELS = "labels"
             const val THEME = "theme"
             const val PROJECTION = "projection"
             const val GEODESIC = "geodesic"
+            const val SHOW_COORD_PICK_TOOLS = "show_coord_pick_tools"
+            const val DATA_SIZE_ZOOMIN = "data_size_zoomin"
+            const val CONST_SIZE_ZOOMIN = "const_size_zoomin"
+            const val ONTOP = "ontop"
             const val TILES = "tiles"
             const val GEOCODING = "geocoding"
             const val DEV_PARAMS = "dev_params"
@@ -222,6 +259,7 @@ object Option {
         object Bin {
             const val BINS = "bins"
             const val BINWIDTH = "binwidth"
+            const val METHOD = "method"
             const val CENTER = "center"
             const val BOUNDARY = "boundary"
         }
@@ -271,6 +309,10 @@ object Option {
             const val IS_CONTOUR = "contour"
             const val BINS = "bins"
             const val BINWIDTH = "binwidth"
+        }
+
+        object YDensity {
+            const val SCALE = "scale"
         }
     }
 
@@ -332,6 +374,12 @@ object Option {
         const val NAME = Meta.NAME
         const val NAME_GRID = "grid"
         const val NAME_WRAP = "wrap"
+
+        const val SCALES = "scales"
+        const val SCALES_FIXED = "fixed"
+        const val SCALES_FREE = "free"
+        const val SCALES_FREE_X = "free_x"
+        const val SCALES_FREE_Y = "free_y"
 
         // grid
         const val X = "x"
@@ -428,6 +476,7 @@ object Option {
         private const val SMOOTH = "smooth"
         private const val BAR = "bar"
         const val HISTOGRAM = "histogram"
+        private const val DOTPLOT = "dotplot"
         private const val TILE = "tile"
         private const val BIN_2D = "bin2d"
         private const val MAP = "map"
@@ -440,6 +489,8 @@ object Option {
         private const val H_LINE = "hline"
         private const val V_LINE = "vline"
         private const val BOX_PLOT = "boxplot"
+        private const val VIOLIN = "violin"
+        private const val YDOTPLOT = "ydotplot"
         const val LIVE_MAP = "livemap"
         const val POINT = "point"
         private const val RIBBON = "ribbon"
@@ -454,7 +505,7 @@ object Option {
         private const val STEP = "step"
         private const val RECT = "rect"
         private const val SEGMENT = "segment"
-        private const val TEXT = "text"
+        const val TEXT = "text"
         private const val RASTER = "raster"
         const val IMAGE = "image"
 
@@ -467,6 +518,8 @@ object Option {
             map[SMOOTH] = GeomKind.SMOOTH
             map[BAR] = GeomKind.BAR
             map[HISTOGRAM] = GeomKind.HISTOGRAM
+            map[DOTPLOT] = GeomKind.DOT_PLOT
+            map[YDOTPLOT] = GeomKind.Y_DOT_PLOT
             map[TILE] = GeomKind.TILE
             map[BIN_2D] = GeomKind.BIN_2D
             map[MAP] = GeomKind.MAP
@@ -479,6 +532,7 @@ object Option {
             map[H_LINE] = GeomKind.H_LINE
             map[V_LINE] = GeomKind.V_LINE
             map[BOX_PLOT] = GeomKind.BOX_PLOT
+            map[VIOLIN] = GeomKind.VIOLIN
             map[LIVE_MAP] = GeomKind.LIVE_MAP
             map[POINT] = GeomKind.POINT
             map[RIBBON] = GeomKind.RIBBON

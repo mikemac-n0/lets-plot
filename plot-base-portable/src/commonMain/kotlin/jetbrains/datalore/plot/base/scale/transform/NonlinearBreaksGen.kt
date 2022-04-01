@@ -5,11 +5,11 @@
 
 package jetbrains.datalore.plot.base.scale.transform
 
-import jetbrains.datalore.base.gcommon.collect.ClosedRange
+import jetbrains.datalore.base.interval.DoubleSpan
 import jetbrains.datalore.plot.base.ContinuousTransform
 import jetbrains.datalore.plot.base.scale.BreaksGenerator
-import jetbrains.datalore.plot.base.scale.MapperUtil
 import jetbrains.datalore.plot.base.scale.ScaleBreaks
+import jetbrains.datalore.plot.base.scale.ScaleUtil
 import jetbrains.datalore.plot.base.scale.breaks.NumericBreakFormatter
 import kotlin.math.abs
 import kotlin.math.min
@@ -20,7 +20,7 @@ internal class NonlinearBreaksGen(
     private val valueFormatter: ((Any) -> String)? = null
 ) : BreaksGenerator {
 
-    override fun generateBreaks(domain: ClosedRange<Double>, targetCount: Int): ScaleBreaks {
+    override fun generateBreaks(domain: DoubleSpan, targetCount: Int): ScaleBreaks {
         val breakValues = generateBreakValues(domain, targetCount, transform)
         val defaultFormatters = createFormatters(breakValues)
         val labels = breakValues.mapIndexed { i, v ->
@@ -30,21 +30,21 @@ internal class NonlinearBreaksGen(
         return ScaleBreaks(breakValues, breakValues, labels)
     }
 
-    override fun labelFormatter(domain: ClosedRange<Double>, targetCount: Int): (Any) -> String {
+    override fun labelFormatter(domain: DoubleSpan, targetCount: Int): (Any) -> String {
         return formatter ?: defaultFormatter(domain, targetCount)
     }
 
-    override fun defaultFormatter(domain: ClosedRange<Double>, targetCount: Int): (Any) -> String {
+    override fun defaultFormatter(domain: DoubleSpan, targetCount: Int): (Any) -> String {
         return createMultiFormatter(generateBreakValues(domain, targetCount, transform))
     }
 
     companion object {
         private fun generateBreakValues(
-            domain: ClosedRange<Double>,
+            domain: DoubleSpan,
             targetCount: Int,
             transform: ContinuousTransform
         ): List<Double> {
-            val transformedDomain = MapperUtil.map(domain) { transform.apply(it) }
+            val transformedDomain = ScaleUtil.applyTransform(domain, transform)
             val transformedBreakValues: List<Double> =
                 LinearBreaksGen.generateBreakValues(transformedDomain, targetCount)
 

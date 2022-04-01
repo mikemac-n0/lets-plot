@@ -6,13 +6,14 @@
 package jetbrains.livemap.searching
 
 import jetbrains.datalore.base.typedGeometry.Vec
-import jetbrains.datalore.base.typedGeometry.explicitVec
 import jetbrains.livemap.Client
 import jetbrains.livemap.core.ecs.AbstractSystem
 import jetbrains.livemap.core.ecs.EcsComponent
 import jetbrains.livemap.core.ecs.EcsComponentManager
 import jetbrains.livemap.core.input.MouseInputComponent
 import jetbrains.livemap.mapengine.LiveMapContext
+import jetbrains.livemap.toClientPoint
+import jetbrains.livemap.ui.UiService
 
 
 class HoverObjectComponent : EcsComponent {
@@ -21,7 +22,10 @@ class HoverObjectComponent : EcsComponent {
     var cursotPosition : Vec<Client>? = null
 }
 
-class HoverObjectDetectionSystem(componentManager: EcsComponentManager) : AbstractSystem<LiveMapContext>(componentManager) {
+class HoverObjectDetectionSystem(
+    private val uiService: UiService,
+    componentManager: EcsComponentManager
+) : AbstractSystem<LiveMapContext>(componentManager) {
     override fun initImpl(context: LiveMapContext) {
         super.initImpl(context)
         createEntity("hover_object")
@@ -32,12 +36,25 @@ class HoverObjectDetectionSystem(componentManager: EcsComponentManager) : Abstra
     override fun updateImpl(context: LiveMapContext, dt: Double) {
         getSingletonEntity<HoverObjectComponent>().let { hoverObject ->
             val mouseInputComponent = hoverObject.get<MouseInputComponent>()
-            val mouseLocation: Vec<Client> = mouseInputComponent
-                .location
-                ?.let { explicitVec(it.x, it.y) }
-                ?: return // no mouse movement in this frame
+
+            if (mouseInputComponent.moveEvent == null &&
+                mouseInputComponent.dragDistance == null
+            ) {
+                return
+            }
+
+
+            // move or drag event happened - location won't be null in this case
+            val mouseLocation: Vec<Client> = mouseInputComponent.location!!.toClientPoint()
 
             val hoverObjectComponent = hoverObject.get<HoverObjectComponent>()
+            if (
+                hoverObjectComponent.cursotPosition == mouseLocation &&
+                hoverObjectComponent.zoom?.toDouble() == context.camera.zoom
+            ) {
+                // same mouse position - same result
+                return
+            }
 
             if (context.camera.isZoomFractionChanged && !context.camera.isZoomLevelChanged) {
                 // on zoom do not search
@@ -49,14 +66,18 @@ class HoverObjectDetectionSystem(componentManager: EcsComponentManager) : Abstra
                 return
             }
 
-            if (hoverObjectComponent.cursotPosition == mouseLocation && context.camera.zoom == hoverObjectComponent.zoom?.toDouble() ?: Double.NaN) {
-                // same mouse position - same result
-                return
-            }
-
             if (mouseInputComponent.dragDistance != null) {
                 // On panning an object and a mouse are synchronized and there is no need to do a search again, only update cursor position
                 hoverObjectComponent.cursotPosition = mouseLocation
+                return
+            }
+
+            if (uiService.containsElementAtCoord(mouseLocation)) {
+                hoverObjectComponent.apply {
+                    cursotPosition = null
+                    zoom = null
+                    searchResult = null
+                }
                 return
             }
 
@@ -66,7 +87,7 @@ class HoverObjectDetectionSystem(componentManager: EcsComponentManager) : Abstra
                 searchResult = getEntities(SEARCH_COMPONENTS)
                     .map { it.get<LocatorComponent>().locatorHelper.search(mouseLocation, it) }
                     .filterNotNull()
-                    .sortedByDescending { it.layerIndex }
+                    .sortedByDescending(SearchResult::layerIndex)
                     .firstOrNull()
             }
         }

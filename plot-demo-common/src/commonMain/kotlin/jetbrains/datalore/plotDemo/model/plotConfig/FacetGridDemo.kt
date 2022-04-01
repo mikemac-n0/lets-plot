@@ -33,7 +33,7 @@ class FacetGridDemo {
         plotSpec["coord"] = mapOf(
             "name" to "fixed",
             "xlim" to listOf(100, 150),
-//            "ylim" to listOf(0, 50),
+            "ylim" to listOf(0, 50),
         )
 
         plotSpec["ggtitle"] = mapOf("text" to "coord_fixed")
@@ -98,7 +98,8 @@ class FacetGridDemo {
                     {
                         'geom': 'point'
                     }
-                ]
+                ],
+                'theme': {'name': 'grey'}
             }
         """.trimIndent()
 

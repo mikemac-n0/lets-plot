@@ -5,10 +5,10 @@
 
 package jetbrains.datalore.plot.builder.layout.axis.label
 
-import jetbrains.datalore.base.gcommon.collect.ClosedRange
+import jetbrains.datalore.base.interval.DoubleSpan
 import jetbrains.datalore.base.geometry.DoubleRectangle
 import jetbrains.datalore.base.geometry.DoubleVector
-import jetbrains.datalore.plot.base.render.svg.TextLabel
+import jetbrains.datalore.plot.base.render.svg.Text
 import jetbrains.datalore.plot.base.scale.ScaleBreaks
 import jetbrains.datalore.plot.builder.guide.Orientation
 import jetbrains.datalore.plot.builder.layout.GeometryUtil
@@ -19,7 +19,7 @@ import kotlin.math.max
 
 internal class HorizontalSimpleLabelsLayout(
     orientation: Orientation,
-    axisDomain: ClosedRange<Double>,
+    axisDomain: DoubleSpan,
     labelSpec: PlotLabelSpec,
     breaks: ScaleBreaks,
     theme: AxisTheme
@@ -48,7 +48,7 @@ internal class HorizontalSimpleLabelsLayout(
             HORIZONTAL_TICK_LOCATION
         )
         for (labelBounds in boundsList) {
-            overlap = overlap || bounds != null && bounds.xRange().isConnected(
+            overlap = overlap || bounds != null && bounds.xRange().connected(
                 SeriesUtil.expand(labelBounds.xRange(), MIN_TICK_LABEL_DISTANCE / 2, MIN_TICK_LABEL_DISTANCE / 2.0)
             )
             bounds = GeometryUtil.union(labelBounds, bounds)
@@ -60,8 +60,8 @@ internal class HorizontalSimpleLabelsLayout(
             .smallFont(false)
             .overlap(overlap)
             .labelAdditionalOffsets(null)
-            .labelHorizontalAnchor(TextLabel.HorizontalAnchor.MIDDLE)
-            .labelVerticalAnchor(TextLabel.VerticalAnchor.TOP)
+            .labelHorizontalAnchor(Text.HorizontalAnchor.MIDDLE)
+            .labelVerticalAnchor(Text.VerticalAnchor.TOP)
             .build()
     }
 

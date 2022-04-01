@@ -11,11 +11,9 @@ import jetbrains.datalore.plot.base.DataFrame.Builder
 import jetbrains.datalore.plot.base.DataFrame.Builder.Companion.emptyFrame
 import jetbrains.datalore.plot.base.DataFrame.Variable
 import jetbrains.datalore.plot.base.data.DataFrameUtil
-import jetbrains.datalore.plot.base.scale.ScaleUtil
 import jetbrains.datalore.plot.base.stat.Stats
 import jetbrains.datalore.plot.builder.VarBinding
 import jetbrains.datalore.plot.builder.assemble.PlotFacets
-import jetbrains.datalore.plot.builder.assemble.TypedScaleMap
 import jetbrains.datalore.plot.builder.data.GroupUtil.indicesByGroup
 import jetbrains.datalore.plot.common.data.SeriesUtil
 import jetbrains.datalore.plot.common.data.SeriesUtil.pickAtIndices
@@ -25,7 +23,7 @@ object DataProcessing {
     fun transformOriginals(
         data: DataFrame,
         bindings: List<VarBinding>,
-        scaleMap: TypedScaleMap
+        transformByAes: Map<Aes<*>, Transform>
     ): DataFrame {
         @Suppress("NAME_SHADOWING")
         var data = data
@@ -37,7 +35,7 @@ object DataProcessing {
                     data,
                     variable,
                     binding.aes,
-                    scaleMap[binding.aes]
+                    transformByAes.getValue(binding.aes)
                 )
             }
         }
@@ -45,11 +43,14 @@ object DataProcessing {
         return data
     }
 
+    /**
+     * Backend-side only
+     */
     fun buildStatData(
         data: DataFrame,
         stat: Stat,
         bindings: List<VarBinding>,
-        scaleMap: TypedScaleMap,
+        transformByAes: Map<Aes<*>, Transform>,
         groupingContext: GroupingContext,
         facets: PlotFacets,
         statCtx: StatContext,
@@ -73,7 +74,7 @@ object DataProcessing {
                 data,
                 stat,
                 bindings,
-                scaleMap,
+                transformByAes,
                 facets,
                 statCtx,
                 varsWithoutBinding,
@@ -89,7 +90,7 @@ object DataProcessing {
                     d,
                     stat,
                     bindings,
-                    scaleMap,
+                    transformByAes,
                     facets,
                     statCtx,
                     varsWithoutBinding,
@@ -150,13 +151,15 @@ object DataProcessing {
             build()
         }
 
+        val normalizedData = stat.normalize(dataAfterStat)
+
         val groupingContextAfterStat = GroupingContext.withOrderedGroups(
-            dataAfterStat,
+            normalizedData,
             groupSizeListAfterStat
         )
 
         return DataAndGroupingContext(
-            dataAfterStat,
+            normalizedData,
             groupingContextAfterStat
         )
     }
@@ -180,13 +183,13 @@ object DataProcessing {
     }
 
     /**
-     * Server-side only
+     * Backend-side only
      */
     private fun applyStat(
         data: DataFrame,
         stat: Stat,
         bindings: List<VarBinding>,
-        scaleMap: TypedScaleMap,
+        transformByAes: Map<Aes<*>, Transform>,
         facets: PlotFacets,
         statCtx: StatContext,
         varsWithoutBinding: List<String>,
@@ -200,50 +203,34 @@ object DataProcessing {
             return statData
         }
 
-        // generate new 'input' series to match stat series
+        statData = inverseTransformStatData(
+            statData,
+            stat,
+            bindings,
+            transformByAes
+        )
 
-        val inverseTransformedStatSeries =
-            inverseTransformContinuousStatData(
-                statData,
-                stat,
-                bindings,
-                scaleMap
-            )
+        val statDataSize = statData.rowCount()
 
         // generate new series for facet variables
-
-        val statDataSize = statData[statVariables.iterator().next()].size
-        val facetVars = HashSet<Variable>()
-        for (facetVarName in facets.variables) {
-            val facetVar = DataFrameUtil.findVariableOrFail(data, facetVarName)
-            facetVars.add(facetVar)
-            if (data[facetVar].isNotEmpty()) {
-                val facetLevel = data[facetVar][0]
-                // generate series for 'facet' variable
-                statData = statData
-                    .builder()
-                    .put(facetVar, List(statDataSize) { facetLevel })
-                    .build()
-            }
+        val facetVars = facets.variables.map {
+            DataFrameUtil.findVariableOrFail(data, it)
+        }
+        val inputSeriesForFacetVars: Map<Variable, List<Any?>> = run {
+            val facetLevelByFacetVar = facetVars.associateWith { data[it][0] }
+            facetLevelByFacetVar.mapValues { (_, facetLevel) -> List(statDataSize) { facetLevel } }
         }
 
         // generate new series for input variables
-
-        if (bindings.isEmpty()) {
-            return statData
-        }
-
-        val newInputSeries = HashMap<Variable, List<*>>()
-
-        fun addSeriesForVariable(variable: Variable) {
+        fun newSerieForVariable(variable: Variable): List<Any?> {
             val value = when (data.isNumeric(variable)) {
                 true -> SeriesUtil.mean(data.getNumeric(variable), defaultValue = null)
                 false -> SeriesUtil.firstNotNull(data[variable], defaultValue = null)
             }
-            val newInputSerie = List(statDataSize) { value }
-            newInputSeries[variable] = newInputSerie
+            return List(statDataSize) { value }
         }
 
+        val newInputSeries = HashMap<Variable, List<Any?>>()
         for (binding in bindings) {
             val variable = binding.variable
             if (variable.isStat || facetVars.contains(variable)) {
@@ -253,98 +240,89 @@ object DataProcessing {
             val aes = binding.aes
             if (stat.hasDefaultMapping(aes)) {
                 val defaultStatVar = stat.getDefaultMapping(aes)
-                val newInputSerie: List<*> =
-                    if (inverseTransformedStatSeries.containsKey(defaultStatVar)) {
-                        inverseTransformedStatSeries.getValue(defaultStatVar)
-                    } else {
-                        val statSerie = statData.getNumeric(defaultStatVar)
-                        ScaleUtil.inverseTransform(statSerie, scaleMap[aes])
-                    }
-                newInputSeries[variable] = newInputSerie
+                newInputSeries[variable] = statData.get(defaultStatVar)
             } else {
                 // Do not override series obtained via 'default stat var'
                 if (!newInputSeries.containsKey(variable)) {
-                    addSeriesForVariable(variable)
+                    newInputSeries[variable] = newSerieForVariable(variable)
                 }
             }
         }
+
         // series for variables without bindings
         for (varName in varsWithoutBinding.filterNot(Stats::isStatVar)) {
             val variable = DataFrameUtil.findVariableOrFail(data, varName)
             if (!newInputSeries.containsKey(variable)) {
-                addSeriesForVariable(variable)
+                newInputSeries[variable] = newSerieForVariable(variable)
             }
         }
 
         val b = statData.builder()
-        for (variable in newInputSeries.keys) {
-            b.put(variable, newInputSeries.getValue(variable))
+        (newInputSeries + inputSeriesForFacetVars).forEach { (variable, serie) ->
+            b.put(variable, serie)
         }
-        // also update stat series
-        for (variable in inverseTransformedStatSeries.keys) {
-            b.putNumeric(variable, inverseTransformedStatSeries.getValue(variable))
-        }
-
         return b.build()
     }
 
-    private fun inverseTransformContinuousStatData(
+    /**
+     * Backend-side only
+     */
+    private fun inverseTransformStatData(
         statData: DataFrame,
         stat: Stat,
         bindings: List<VarBinding>,
-        scaleMap: TypedScaleMap
-    ): Map<Variable, List<Double?>> {
-        // inverse transform stat data with continuous domain.
-        val continuousScaleByAes = HashMap<Aes<*>, Scale<*>>()
-        val aesByMappedStatVar = HashMap<Variable, Aes<*>>()
-        for (aes in Aes.values()) {
-            if (stat.hasDefaultMapping(aes)) {
-                val defaultStatVar = stat.getDefaultMapping(aes)
-                aesByMappedStatVar[defaultStatVar] = aes
+        transformByAes: Map<Aes<*>, Transform>
+    ): DataFrame {
+
+        // X,Y scale - always.
+        check(transformByAes.containsKey(Aes.X))
+        check(transformByAes.containsKey(Aes.Y))
+
+        fun transformForAes(aes: Aes<*>): Transform {
+            return when {
+                Aes.isPositionalX(aes) -> transformByAes.getValue(Aes.X)
+                Aes.isPositionalY(aes) -> transformByAes.getValue(Aes.Y)
+                else -> throw IllegalStateException("Positional aes expected but was $aes.")
             }
         }
 
-        for (binding in bindings) {
-            val aes = binding.aes
-            val variable = binding.variable
-            if (variable.isStat) {
-                aesByMappedStatVar[variable] = aes
-                // ignore 'stat' var becaue ..?
-                continue
-            }
+        val needTransformX = stat.consumes().any { Aes.isPositionalX(it) }
+        val needTransformY = stat.consumes().any { Aes.isPositionalY(it) }
 
-            val scale = scaleMap[aes]
-            if (scale.isContinuousDomain) {
-                continuousScaleByAes[aes] = scale
-                if (Aes.isPositionalX(aes) && !continuousScaleByAes.containsKey(Aes.X)) {
-                    continuousScaleByAes[Aes.X] = scale
-                } else if (Aes.isPositionalY(aes) && !continuousScaleByAes.containsKey(Aes.Y)) {
-                    continuousScaleByAes[Aes.Y] = scale
-                }
-            }
+        fun needInverseTransform(aes: Aes<*>): Boolean {
+            if (Aes.isPositionalX(aes)) return needTransformX
+            if (Aes.isPositionalY(aes)) return needTransformY
+            return false
         }
 
-        val inverseTransformedStatSeries = HashMap<Variable, List<Double?>>()
-        for (statVar in statData.variables()) {
-            if (aesByMappedStatVar.containsKey(statVar)) {
-                val aes = aesByMappedStatVar.getValue(statVar)
-                var scale: Scale<*>? = continuousScaleByAes[aes]
-                if (scale == null) {
-                    if (Aes.isPositionalX(aes)) {
-                        scale = continuousScaleByAes[Aes.X]
-                    } else if (Aes.isPositionalY(aes)) {
-                        scale = continuousScaleByAes[Aes.Y]
-                    }
-                }
+        val aesByStatVar: Map<Variable, Aes<*>> = run {
+            val aesByStatVarDefault = Aes.values()
+                .filter { stat.hasDefaultMapping(it) }.associateBy { stat.getDefaultMapping(it) }
 
-                if (scale != null) {
-                    val statSerie = statData.getNumeric(statVar)
-                    val inverseTransformedStatSerie = ScaleUtil.inverseTransformToContinuousDomain(statSerie, scale)
-                    inverseTransformedStatSeries[statVar] = inverseTransformedStatSerie
-                }
-            }
+            val aesByStatVarMapped = bindings
+                .filterNot { it.variable.isStat }.associate { it.variable to it.aes }
+
+            aesByStatVarDefault + aesByStatVarMapped
         }
-        return inverseTransformedStatSeries
+
+        val inverseTransformedSeries = statData.variables()
+            .filter { aesByStatVar.containsKey(it) }
+            .filter {
+                val aes = aesByStatVar.getValue(it)
+                needInverseTransform(aes)
+            }.associateWith {
+                val aes = aesByStatVar.getValue(it)
+                val transform = transformForAes(aes)
+                val statSerie = statData.getNumeric(it)
+                transform.applyInverse(statSerie)
+            }
+
+        // Replace series in the stat data.
+        val builder = statData.builder()
+        inverseTransformedSeries.forEach { (variable, serie) ->
+            builder.put(variable, serie)
+        }
+        return builder.build()
     }
 
     internal fun computeGroups(

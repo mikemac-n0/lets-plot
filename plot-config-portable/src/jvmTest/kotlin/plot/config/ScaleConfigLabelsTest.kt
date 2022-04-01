@@ -6,9 +6,10 @@
 package jetbrains.datalore.plot.config
 
 import jetbrains.datalore.base.datetime.*
-import jetbrains.datalore.base.gcommon.collect.ClosedRange
+import jetbrains.datalore.base.interval.DoubleSpan
 import jetbrains.datalore.plot.base.Aes
 import jetbrains.datalore.plot.base.Scale
+import jetbrains.datalore.plot.builder.GeomLayer
 import jetbrains.datalore.plot.builder.layout.axis.AxisBreaksProviderFactory
 import jetbrains.datalore.plot.common.time.TimeUtil
 import jetbrains.datalore.plot.config.Option.Scale.BREAKS
@@ -18,7 +19,8 @@ import jetbrains.datalore.plot.config.Option.Scale.DISCRETE_DOMAIN
 import jetbrains.datalore.plot.config.Option.Scale.FORMAT
 import jetbrains.datalore.plot.config.Option.Scale.LABELS
 import jetbrains.datalore.plot.config.Option.Scale.LIMITS
-import jetbrains.datalore.plot.config.TestUtil.buildPointLayer
+import jetbrains.datalore.plot.config.TestUtil.buildGeomLayer
+import kotlin.math.roundToInt
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -241,14 +243,14 @@ class ScaleConfigLabelsTest {
         val xLabels = getScaleLabels(
             scaleMap[Aes.X],
             targetCount = 1,
-            closeRange = ClosedRange(instant, instant)
+            closeRange = DoubleSpan(instant, instant)
         )
         assertEquals(listOf("01-01-2021 10:10"), xLabels)
 
         val yLabels = getScaleLabels(
             scaleMap[Aes.Y],
             targetCount = 1,
-            closeRange = ClosedRange(instant, instant)
+            closeRange = DoubleSpan(instant, instant)
         )
         assertEquals(listOf("in January 2021"), yLabels)
     }
@@ -277,7 +279,7 @@ class ScaleConfigLabelsTest {
         val xLabels = getScaleLabels(
             scaleMap[Aes.X],
             targetCount = 1,
-            closeRange = ClosedRange(instants.first(), instants.last())
+            closeRange = DoubleSpan(instants.first(), instants.last())
         )
         assertEquals(
             expected = listOf("01-01-2021", "02-01-2021", "03-01-2021"),
@@ -304,6 +306,70 @@ class ScaleConfigLabelsTest {
 
         val labels = scaleMap[Aes.COLOR].getScaleBreaks().labels
         assertEquals(listOf("is red", "is green", "is blue"), labels)
+    }
+
+    @Test
+    fun `aes_label with discrete input`() {
+        val serie = listOf("one", "two", "three")
+        val data = mapOf("value" to serie)
+        val mapping = mapOf(
+            Aes.LABEL.name to "value",
+        )
+        val scaleMap = getScaleMap(data, mapping, emptyList(), Option.GeomName.TEXT)
+
+        val labels = scaleMap[Aes.LABEL].getScaleBreaks().labels
+        // identity expected
+        assertEquals(serie, labels)
+    }
+
+    @Test
+    fun `aes_label with continuous input`() {
+        val serie = listOf(1.0, 2.0, 3.0)
+        val data = mapOf("value" to serie)
+        val mapping = mapOf(
+            Aes.LABEL.name to "value",
+        )
+
+        val geomLayer = buildGeomLayer(Option.GeomName.TEXT, data, mapping, null, emptyList())
+
+        val labelTransform = geomLayer.scaleMap[Aes.LABEL].transform
+        val labelMapper = geomLayer.scaleMapppersNP.getValue(Aes.LABEL)
+
+        val inputs = listOf(null, 1.5, -1.5)
+        val outputs = labelTransform.apply(inputs).map {
+            labelMapper(it) as Double?
+        }
+
+        // continuous identity expected
+        assertEquals(inputs, outputs)
+    }
+
+    @Test
+    fun `aes_label with continuous input and format`() {
+        val serie = listOf(1.0, 2.0, 3.0)
+        val data = mapOf("value" to serie)
+        val mapping = mapOf(
+            Aes.LABEL.name to "value",
+        )
+        val scales = listOf(
+            mapOf(
+                Option.Scale.AES to Aes.LABEL.name,
+                FORMAT to "d"   // round to int.
+            )
+        )
+
+        val geomLayer = buildGeomLayer(Option.GeomName.TEXT, data, mapping, null, scales)
+
+        val labelTransform = geomLayer.scaleMap[Aes.LABEL].transform
+        val labelMapper = geomLayer.scaleMapppersNP.getValue(Aes.LABEL)
+
+        val inputs = listOf(null, 1.5, -1.5)
+        val outputs = labelTransform.apply(inputs).map {
+            (labelMapper(it) as Double?)?.roundToInt()?.toString() ?: "n/a"
+        }
+
+        // continuous identity expected (formatted to string).
+        assertEquals(listOf("n/a", "2", "-1"), outputs)
     }
 
     @Test
@@ -334,12 +400,13 @@ class ScaleConfigLabelsTest {
             data: Map<String, Any>,
             mapping: Map<String, Any>,
             scales: List<Map<String, Any>>,
-        ) = buildPointLayer(data, mapping, scales = scales).scaleMap
+            geom: String = Option.GeomName.POINT,
+        ) = buildGeomLayer(geom, data, mapping, scales = scales).scaleMap
 
         internal fun getScaleLabels(
             scale: Scale<Double>,
             targetCount: Int = 5,
-            closeRange: ClosedRange<Double> = ClosedRange(-0.5, 0.5),
+            closeRange: DoubleSpan = DoubleSpan(-0.5, 0.5),
         ): List<String> {
             val breaksProvider = AxisBreaksProviderFactory.forScale(scale).createAxisBreaksProvider(closeRange)
             return breaksProvider.getBreaks(

@@ -37,8 +37,11 @@ class Aes<T> private constructor(val name: String, val isNumeric: Boolean = true
         val LINETYPE: Aes<LineType> = Aes("linetype", false)
 
         val SIZE: Aes<Double> = Aes("size")
+        val STACKSIZE: Aes<Double> = Aes("stacksize")
         val WIDTH: Aes<Double> = Aes("width")
         val HEIGHT: Aes<Double> = Aes("height")
+        val BINWIDTH: Aes<Double> = Aes("binwidth")
+        val VIOLINWIDTH: Aes<Double> = Aes("violinwidth")
         val WEIGHT: Aes<Double> = Aes("weight")
         val INTERCEPT: Aes<Double> = Aes("intercept")
         val SLOPE: Aes<Double> = Aes("slope")
@@ -61,7 +64,7 @@ class Aes<T> private constructor(val name: String, val isNumeric: Boolean = true
         val SPEED: Aes<Double> = Aes("speed")
         val FLOW: Aes<Double> = Aes("flow")
 
-        val LABEL: Aes<Any?> = Aes("label", false)
+        val LABEL: Aes<Any> = Aes("label", false)
         val FAMILY: Aes<String> = Aes("family", false)
         val FONTFACE: Aes<String> = Aes("fontface", false)
 
@@ -122,26 +125,25 @@ class Aes<T> private constructor(val name: String, val isNumeric: Boolean = true
             return aes == COLOR || aes == FILL
         }
 
-        fun isAffectingScaleX(aes: Aes<*>): Boolean {
-            return isPositionalX(aes) // && aes != XINTERCEPT
+        fun affectingScaleX(aes: Aes<*>): Boolean {
+            return isPositionalX(aes)
         }
 
-        fun isAffectingScaleY(aes: Aes<*>): Boolean {
+        fun affectingScaleY(aes: Aes<*>): Boolean {
             return isPositionalY(aes) &&
                     // "INTERCEPT" is "positional Y" because it must use the same 'mapper' as other "positional Y"-s,
                     // but its range of values is not taken in account when computing the Y-mapper.
-                    aes != INTERCEPT // &&
-//                    aes != YINTERCEPT
+                    aes != INTERCEPT
         }
 
         fun affectingScaleX(unfiltered: Iterable<Aes<*>>): List<Aes<Double>> {
             val numeric = numeric(unfiltered)
-            return numeric.filter { isAffectingScaleX(it) }
+            return numeric.filter { affectingScaleX(it) }
         }
 
         fun affectingScaleY(unfiltered: Iterable<Aes<*>>): List<Aes<Double>> {
             val numeric = numeric(unfiltered)
-            return numeric.filter { isAffectingScaleY(it) }
+            return numeric.filter { affectingScaleY(it) }
         }
 
         fun noGuideNeeded(aes: Aes<*>): Boolean {
@@ -151,8 +153,11 @@ class Aes<T> private constructor(val name: String, val isNumeric: Boolean = true
                     aes == FLOW ||
                     aes == LABEL ||
                     aes == SLOPE ||
+                    aes == STACKSIZE ||
                     aes == WIDTH ||
                     aes == HEIGHT ||
+                    aes == BINWIDTH ||
+                    aes == VIOLINWIDTH ||
                     aes == HJUST ||
                     aes == VJUST ||
                     aes == ANGLE ||

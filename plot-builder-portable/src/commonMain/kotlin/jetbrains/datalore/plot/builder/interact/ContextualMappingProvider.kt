@@ -19,11 +19,11 @@ interface ContextualMappingProvider {
                     tooltipLines = emptyList(),
                     tooltipAnchor = null,
                     tooltipMinWidth = null,
-                    tooltipColor = null,
                     ignoreInvisibleTargets = false,
                     hasGeneralTooltip = false,
                     hasAxisTooltip = false,
-                    isCrosshairEnabled = false
+                    isCrosshairEnabled = false,
+                    tooltipTitle = null
                 )
             }
         }

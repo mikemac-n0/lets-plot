@@ -26,9 +26,8 @@ object Stats {
     val MIDDLE = DataFrame.Variable("..middle..", STAT, "middle")
     val UPPER = DataFrame.Variable("..upper..", STAT, "upper")
     val WIDTH = DataFrame.Variable("..width..", STAT, "width")
-
-    val CORR = DataFrame.Variable("..corr..", STAT, "corr")
-    val CORR_ABS = DataFrame.Variable("..corr_abs..", STAT, "corr_abs")
+    val BIN_WIDTH = DataFrame.Variable("..binwidth..", STAT, "binwidth")
+    val VIOLIN_WIDTH = DataFrame.Variable("..violinwidth..", STAT, "violinwidth")
 
     val SCALED = DataFrame.Variable("..scaled..", STAT, "scaled")
 
@@ -50,10 +49,10 @@ object Stats {
             MIDDLE,
             UPPER,
             WIDTH,
+            BIN_WIDTH,
+            VIOLIN_WIDTH,
             SCALED,
             GROUP,
-            CORR,
-            CORR_ABS
         )
 
         val result = HashMap<String, DataFrame.Variable>()
@@ -111,6 +110,62 @@ object Stats {
         )
     }
 
+    fun dotplot(
+        binCount: Int = BinStat.DEF_BIN_COUNT,
+        binWidth: Double? = null,
+        center: Double? = null,
+        boundary: Double? = null,
+        method: DotplotStat.Method = DotplotStat.DEF_METHOD
+    ): DotplotStat {
+        var xPosKind = BinStat.XPosKind.NONE
+        var xPosValue = 0.0
+        if (method != DotplotStat.Method.DOTDENSITY) {
+            if (boundary != null) {
+                xPosKind = BinStat.XPosKind.BOUNDARY
+                xPosValue = boundary
+            } else if (center != null) {
+                xPosKind = BinStat.XPosKind.CENTER
+                xPosValue = center
+            }
+        }
+
+        return DotplotStat(
+            binCount = binCount,
+            binWidth = binWidth,
+            xPosKind = xPosKind,
+            xPos = xPosValue,
+            method = method
+        )
+    }
+
+    fun ydotplot(
+        binCount: Int = BinStat.DEF_BIN_COUNT,
+        binWidth: Double? = null,
+        center: Double? = null,
+        boundary: Double? = null,
+        method: DotplotStat.Method = DotplotStat.DEF_METHOD
+    ): YDotplotStat {
+        var xPosKind = BinStat.XPosKind.NONE
+        var xPosValue = 0.0
+        if (method != DotplotStat.Method.DOTDENSITY) {
+            if (boundary != null) {
+                xPosKind = BinStat.XPosKind.BOUNDARY
+                xPosValue = boundary
+            } else if (center != null) {
+                xPosKind = BinStat.XPosKind.CENTER
+                xPosValue = center
+            }
+        }
+
+        return YDotplotStat(
+            binCount = binCount,
+            binWidth = binWidth,
+            xPosKind = xPosKind,
+            xPos = xPosValue,
+            method = method
+        )
+    }
+
     fun smooth(
         smootherPointCount: Int = SmoothStat.DEF_EVAL_POINT_COUNT,
         smoothingMethod: SmoothStat.Method = SmoothStat.DEF_SMOOTHING_METHOD,
@@ -130,20 +185,6 @@ object Stats {
             polynomialDegree = polynomialDegree,
             loessCriticalSize = loessCriticalSize,
             samplingSeed = samplingSeed
-        )
-    }
-
-    fun corr(
-        correlationMethod: CorrelationStat.Method = CorrelationStat.DEF_CORRELATION_METHOD,
-        type: CorrelationStat.Type = CorrelationStat.DEF_TYPE,
-        fillDiagonal: Boolean = CorrelationStat.DEF_FILL_DIAGONAL,
-        threshold: Double = CorrelationStat.DEF_THRESHOLD
-    ): CorrelationStat {
-        return CorrelationStat(
-            correlationMethod = correlationMethod,
-            type = type,
-            fillDiagonal = fillDiagonal,
-            threshold = threshold
         )
     }
 
@@ -180,7 +221,7 @@ object Stats {
         adjust: Double = DensityStat.DEF_ADJUST,
         kernel: DensityStat.Kernel = DensityStat.DEF_KERNEL,
         n: Int = DensityStat.DEF_N,
-        fullScalMax: Int = DensityStat.DEF_FULL_SCAN_MAX
+        fullScanMax: Int = DensityStat.DEF_FULL_SCAN_MAX
     ): DensityStat {
         return DensityStat(
             bandWidth = bandWidth,
@@ -188,7 +229,7 @@ object Stats {
             adjust = adjust,
             kernel = kernel,
             n = n,
-            fullScalMax = fullScalMax
+            fullScanMax = fullScanMax
         )
     }
 

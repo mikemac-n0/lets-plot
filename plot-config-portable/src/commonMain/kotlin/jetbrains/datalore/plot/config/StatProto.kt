@@ -12,29 +12,18 @@ import jetbrains.datalore.plot.config.Option.Stat.Bin
 import jetbrains.datalore.plot.config.Option.Stat.Bin2d
 import jetbrains.datalore.plot.config.Option.Stat.Boxplot
 import jetbrains.datalore.plot.config.Option.Stat.Contour
-import jetbrains.datalore.plot.config.Option.Stat.Corr
 import jetbrains.datalore.plot.config.Option.Stat.Density
 import jetbrains.datalore.plot.config.Option.Stat.Density2d
 import jetbrains.datalore.plot.config.Option.Stat.Smooth
+import jetbrains.datalore.plot.config.Option.Stat.YDensity
 
 object StatProto {
 
-    internal fun defaultOptions(statName: String, geomKind: GeomKind): Map<String, Any> {
+    internal fun defaultOptions(
+        statName: String,
+        @Suppress("UNUSED_PARAMETER") geomKind: GeomKind
+    ): Map<String, Any> {
         return when (StatKind.safeValueOf(statName)) {
-            StatKind.CORR -> {
-                when (geomKind) {
-                    GeomKind.TILE -> mapOf<String, Any>(
-                        "size" to 0.0   // 'corr' is mapped to the outline color 'color' - avoid on 'tiles'.
-                    )
-                    GeomKind.POINT,
-                    GeomKind.TEXT -> mapOf<String, Any>(
-                        "size" to 0.8,
-                        "size_unit" to "x",
-                        "label_format" to ".2f"
-                    )
-                    else -> emptyMap()
-                }
-            }
             else -> emptyMap()
         }
     }
@@ -71,6 +60,8 @@ object StatProto {
                 )
             }
 
+            StatKind.DOTPLOT -> return configureDotplotStat(options)
+
             StatKind.CONTOUR -> {
                 return ContourStat(
                     binCount = options.getIntegerDef(Contour.BINS, ContourStat.DEF_BIN_COUNT),
@@ -87,14 +78,16 @@ object StatProto {
 
             StatKind.SMOOTH -> return configureSmoothStat(options)
 
-            StatKind.CORR -> return configureCorrStat(options)
-
             StatKind.BOXPLOT -> {
                 return Stats.boxplot(
                     whiskerIQRRatio = options.getDoubleDef(Boxplot.COEF, BoxplotStat.DEF_WHISKER_IQR_RATIO),
                     computeWidth = options.getBoolean(Boxplot.VARWIDTH, BoxplotStat.DEF_COMPUTE_WIDTH)
                 )
             }
+
+            StatKind.YDENSITY -> return configureYDensityStat(options)
+
+            StatKind.YDOTPLOT -> return configureYDotplotStat(options)
 
             StatKind.DENSITY -> return configureDensityStat(options)
 
@@ -104,6 +97,21 @@ object StatProto {
 
             else -> throw IllegalArgumentException("Unknown stat: '$statKind'")
         }
+    }
+
+    private fun configureDotplotStat(options: OptionsAccessor): DotplotStat {
+
+        val method = options.getString(Bin.METHOD)?.let {
+            DotplotStat.Method.safeValueOf(it)
+        }
+
+        return Stats.dotplot(
+            binCount = options.getIntegerDef(Bin.BINS, BinStat.DEF_BIN_COUNT),
+            binWidth = options.getDouble(Bin.BINWIDTH),
+            center = options.getDouble(Bin.CENTER),
+            boundary = options.getDouble(Bin.BOUNDARY),
+            method = method ?: DotplotStat.DEF_METHOD
+        )
     }
 
     private fun configureSmoothStat(options: OptionsAccessor): SmoothStat {
@@ -145,28 +153,56 @@ object StatProto {
         )
     }
 
-    private fun configureCorrStat(options: OptionsAccessor): CorrelationStat {
-        val correlationMethod = options.getString(Corr.METHOD)?.let {
+    private fun configureYDensityStat(options: OptionsAccessor): YDensityStat {
+        val scale = options.getString(YDensity.SCALE)?.let {
             when (it.lowercase()) {
-                "pearson" -> CorrelationStat.Method.PEARSON
-                else -> throw IllegalArgumentException("Unsupported correlation method: '$it'. Must be: 'pearson'")
+                "area" -> YDensityStat.Scale.AREA
+                "count" -> YDensityStat.Scale.COUNT
+                "width" -> YDensityStat.Scale.WIDTH
+                else -> throw IllegalArgumentException(
+                    "Unsupported scale: '$it'\n" +
+                    "Use one of: area, count, width."
+                )
             }
         }
 
-        val type = options.getString(Corr.TYPE)?.let {
-            when (it.lowercase()) {
-                "full" -> CorrelationStat.Type.FULL
-                "upper" -> CorrelationStat.Type.UPPER
-                "lower" -> CorrelationStat.Type.LOWER
-                else -> throw IllegalArgumentException("Unsupported matrix type: '$it'. Expected: 'full', 'upper' or 'lower'.")
+        var bwValue: Double? = null
+        var bwMethod: DensityStat.BandWidthMethod = DensityStat.DEF_BW
+        options[Density.BAND_WIDTH]?.run {
+            if (this is Number) {
+                bwValue = this.toDouble()
+            } else if (this is String) {
+                bwMethod = DensityStatUtil.toBandWidthMethod(this)
             }
         }
 
-        return CorrelationStat(
-            correlationMethod = correlationMethod ?: CorrelationStat.DEF_CORRELATION_METHOD,
-            type = type ?: CorrelationStat.DEF_TYPE,
-            fillDiagonal = options.getBoolean(Corr.FILL_DIAGONAL, CorrelationStat.DEF_FILL_DIAGONAL),
-            threshold = options.getDoubleDef(Corr.THRESHOLD, CorrelationStat.DEF_THRESHOLD)
+        val kernel = options.getString(Density.KERNEL)?.let {
+            DensityStatUtil.toKernel(it)
+        }
+
+        return YDensityStat(
+            scale = scale ?: YDensityStat.DEF_SCALE,
+            bandWidth = bwValue,
+            bandWidthMethod = bwMethod,
+            adjust = options.getDoubleDef(Density.ADJUST, DensityStat.DEF_ADJUST),
+            kernel = kernel ?: DensityStat.DEF_KERNEL,
+            n = options.getIntegerDef(Density.N, DensityStat.DEF_N),
+            fullScanMax = options.getIntegerDef(Density.FULL_SCAN_MAX, DensityStat.DEF_FULL_SCAN_MAX)
+        )
+    }
+
+    private fun configureYDotplotStat(options: OptionsAccessor): YDotplotStat {
+
+        val method = options.getString(Bin.METHOD)?.let {
+            DotplotStat.Method.safeValueOf(it)
+        }
+
+        return Stats.ydotplot(
+            binCount = options.getIntegerDef(Bin.BINS, BinStat.DEF_BIN_COUNT),
+            binWidth = options.getDouble(Bin.BINWIDTH),
+            center = options.getDouble(Bin.CENTER),
+            boundary = options.getDouble(Bin.BOUNDARY),
+            method = method ?: DotplotStat.DEF_METHOD
         )
     }
 
@@ -191,10 +227,9 @@ object StatProto {
             adjust = options.getDoubleDef(Density.ADJUST, DensityStat.DEF_ADJUST),
             kernel = kernel ?: DensityStat.DEF_KERNEL,
             n = options.getIntegerDef(Density.N, DensityStat.DEF_N),
-            fullScalMax = options.getIntegerDef(Density.FULL_SCAN_MAX, DensityStat.DEF_FULL_SCAN_MAX),
+            fullScanMax = options.getIntegerDef(Density.FULL_SCAN_MAX, DensityStat.DEF_FULL_SCAN_MAX),
         )
     }
-
 
     private fun configureDensity2dStat(options: OptionsAccessor, filled: Boolean): AbstractDensity2dStat {
         var bwValueX: Double? = null

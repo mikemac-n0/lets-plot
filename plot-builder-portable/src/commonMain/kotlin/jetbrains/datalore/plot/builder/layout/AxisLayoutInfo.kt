@@ -5,10 +5,10 @@
 
 package jetbrains.datalore.plot.builder.layout
 
-import jetbrains.datalore.base.gcommon.collect.ClosedRange
+import jetbrains.datalore.base.interval.DoubleSpan
 import jetbrains.datalore.base.geometry.DoubleRectangle
 import jetbrains.datalore.base.geometry.DoubleVector
-import jetbrains.datalore.plot.base.render.svg.TextLabel
+import jetbrains.datalore.plot.base.render.svg.Text
 import jetbrains.datalore.plot.base.scale.ScaleBreaks
 import jetbrains.datalore.plot.builder.guide.Orientation
 
@@ -16,12 +16,12 @@ class AxisLayoutInfo private constructor(b: Builder) {
     val axisBreaks: ScaleBreaks
     val axisLength: Double
     val orientation: Orientation
-    val axisDomain: ClosedRange<Double>
+    val axisDomain: DoubleSpan
 
     val tickLabelsBounds: DoubleRectangle?
     val tickLabelRotationAngle: Double
-    val tickLabelHorizontalAnchor: TextLabel.HorizontalAnchor?    // optional
-    val tickLabelVerticalAnchor: TextLabel.VerticalAnchor?        // optional
+    val tickLabelHorizontalAnchor: Text.HorizontalAnchor?    // optional
+    val tickLabelVerticalAnchor: Text.VerticalAnchor?        // optional
     val tickLabelAdditionalOffsets: List<DoubleVector>?           // optional
     val tickLabelSmallFont: Boolean
     private val tickLabelsBoundsMax: DoubleRectangle?                     // debug
@@ -73,12 +73,12 @@ class AxisLayoutInfo private constructor(b: Builder) {
     class Builder {
         var myAxisLength: Double = 0.0
         var myOrientation: Orientation? = null
-        var myAxisDomain: ClosedRange<Double>? = null
+        var myAxisDomain: DoubleSpan? = null
         var myMaxTickLabelsBounds: DoubleRectangle? = null
         var myTickLabelSmallFont = false
         var myLabelAdditionalOffsets: List<DoubleVector>? = null
-        var myLabelHorizontalAnchor: TextLabel.HorizontalAnchor? = null
-        var myLabelVerticalAnchor: TextLabel.VerticalAnchor? = null
+        var myLabelHorizontalAnchor: Text.HorizontalAnchor? = null
+        var myLabelVerticalAnchor: Text.VerticalAnchor? = null
         var myTickLabelRotationAngle = 0.0
         var myTickLabelsBounds: DoubleRectangle? = null
         var myAxisBreaks: ScaleBreaks? = null
@@ -97,7 +97,7 @@ class AxisLayoutInfo private constructor(b: Builder) {
             return this
         }
 
-        fun axisDomain(r: ClosedRange<Double>): Builder {
+        fun axisDomain(r: DoubleSpan): Builder {
             myAxisDomain = r
             return this
         }
@@ -117,12 +117,12 @@ class AxisLayoutInfo private constructor(b: Builder) {
             return this
         }
 
-        fun tickLabelHorizontalAnchor(labelHorizontalAnchor: TextLabel.HorizontalAnchor?): Builder {
+        fun tickLabelHorizontalAnchor(labelHorizontalAnchor: Text.HorizontalAnchor?): Builder {
             myLabelHorizontalAnchor = labelHorizontalAnchor
             return this
         }
 
-        fun tickLabelVerticalAnchor(labelVerticalAnchor: TextLabel.VerticalAnchor?): Builder {
+        fun tickLabelVerticalAnchor(labelVerticalAnchor: Text.VerticalAnchor?): Builder {
             myLabelVerticalAnchor = labelVerticalAnchor
             return this
         }

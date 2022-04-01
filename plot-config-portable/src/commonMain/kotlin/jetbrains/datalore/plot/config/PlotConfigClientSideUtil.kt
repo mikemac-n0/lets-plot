@@ -39,12 +39,16 @@ object PlotConfigClientSideUtil {
     fun createPlotAssembler(config: PlotConfigClientSide): PlotAssembler {
         val layersByTile = buildPlotLayers(config)
         val assembler = PlotAssembler.multiTile(
-            config.scaleMap,
             layersByTile,
+            config.scaleMap.get(Aes.X),
+            config.scaleMap.get(Aes.Y),
+            config.mappersByAesNP,
             config.coordProvider,
             config.theme
         )
         assembler.title = config.title
+        assembler.subtitle = config.subtitle
+        assembler.caption = config.caption
         assembler.guideOptionsMap = config.guideOptionsMap
         assembler.facets = config.facets
         return assembler
@@ -64,28 +68,35 @@ object PlotConfigClientSideUtil {
         for (tileDataByLayer in layersDataByTile) {
             val panelLayers = ArrayList<GeomLayer>()
 
-            val isMultilayer = tileDataByLayer.size > 1
             val isLiveMap = plotConfig.layerConfigs.any { it.geomProto.geomKind == GeomKind.LIVE_MAP }
 
             for (layerIndex in tileDataByLayer.indices) {
                 check(layerBuilders.size >= layerIndex)
 
                 if (layerBuilders.size == layerIndex) {
+                    val otherLayerWithTooltips = plotConfig.layerConfigs
+                        .filterIndexed { index, _ -> index != layerIndex }
+                        .any { !it.tooltips.hideTooltips() }
+
                     val layerConfig = plotConfig.layerConfigs[layerIndex]
                     val geomInteraction =
                         GeomInteractionUtil.configGeomTargets(
                             layerConfig,
                             plotConfig.scaleMap,
-                            isMultilayer,
+                            otherLayerWithTooltips,
                             isLiveMap,
                             plotConfig.theme
                         )
 
-                    layerBuilders.add(createLayerBuilder(layerConfig, /*scaleProvidersMap,*/ geomInteraction))
+                    layerBuilders.add(createLayerBuilder(layerConfig, geomInteraction))
                 }
 
                 val layerTileData = tileDataByLayer[layerIndex]
-                val layer = layerBuilders[layerIndex].build(layerTileData, plotConfig.scaleMap)
+                val layer = layerBuilders[layerIndex].build(
+                    layerTileData,
+                    plotConfig.scaleMap,
+                    plotConfig.mappersByAesNP,
+                )
                 panelLayers.add(layer)
             }
             layersByTile.add(panelLayers)

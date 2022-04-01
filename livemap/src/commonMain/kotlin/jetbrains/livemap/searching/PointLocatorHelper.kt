@@ -6,29 +6,25 @@
 package jetbrains.livemap.searching
 
 import jetbrains.datalore.base.typedGeometry.Vec
-import jetbrains.datalore.base.values.Color
 import jetbrains.livemap.Client
 import jetbrains.livemap.chart.ChartElementComponent
 import jetbrains.livemap.chart.SymbolComponent
 import jetbrains.livemap.core.ecs.EcsEntity
 import jetbrains.livemap.mapengine.placement.ScreenLoopComponent
+import jetbrains.livemap.searching.LocatorUtil.distance
 
 class PointLocatorHelper : LocatorHelper {
 
-    override fun getColor(target: EcsEntity): Color? {
-        return target.get<ChartElementComponent>().run { strokeColor ?: fillColor }
-    }
-
     override fun isCoordinateInTarget(coord: Vec<Client>, target: EcsEntity): Boolean {
-        if (!target.contains(LOCATABLE_COMPONENTS)) {
+        if (REQUIRED_COMPONENTS !in target) {
             return false
         }
 
-        val radius = target.get<SymbolComponent>().size.x / 2
-        return target.get<ScreenLoopComponent>().origins.any { LocatorUtil.distance(coord, it) <= radius }
+        val radius = target.get<SymbolComponent>().size.x / 2 * target.get<ChartElementComponent>().scalingSizeFactor
+        return target.get<ScreenLoopComponent>().origins.any { distance(coord, it) <= radius }
     }
 
     companion object {
-        val LOCATABLE_COMPONENTS = listOf(SymbolComponent::class, ScreenLoopComponent::class)
+        val REQUIRED_COMPONENTS = listOf(SymbolComponent::class, ScreenLoopComponent::class, ChartElementComponent::class)
     }
 }

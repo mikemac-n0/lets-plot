@@ -5,7 +5,7 @@
 
 package jetbrains.datalore.plot.config
 
-import jetbrains.datalore.base.gcommon.collect.ClosedRange
+import jetbrains.datalore.base.interval.DoubleSpan
 import jetbrains.datalore.base.values.Color
 import jetbrains.datalore.plot.base.Aes
 import jetbrains.datalore.plot.base.render.point.PointShape
@@ -46,7 +46,6 @@ open class OptionsAccessor(
             defaultOptions[option]
         }
     }
-
     fun getSafe(option: String): Any {
         return get(option) ?: throw IllegalStateException("Option `$option` not found.")
     }
@@ -69,6 +68,14 @@ open class OptionsAccessor(
     fun getDoubleList(option: String): List<Double> {
         val list = getNumList(option)
         return list.map { it.toDouble() }
+    }
+
+    fun getBoundedDoubleList(option: String, lowerBound: Double, upperBound: Double): List<Double> {
+        val list = getDoubleList(option)
+        list.forEach {
+            check(it in lowerBound..upperBound) { "Quantile $it is not in range [$lowerBound, $upperBound]" }
+        }
+        return list
     }
 
     fun getNumPair(option: String): Pair<Number, Number> {
@@ -153,7 +160,7 @@ open class OptionsAccessor(
         return list as List<String>
     }
 
-    internal fun getRange(option: String): ClosedRange<Double> {
+    internal fun getRange(option: String): DoubleSpan {
         require(has(option)) { "'Range' value is expected in form: [min, max]" }
 
         val range = getRangeOrNull(option)
@@ -163,7 +170,7 @@ open class OptionsAccessor(
         return range
     }
 
-    fun getRangeOrNull(option: String): ClosedRange<Double>? {
+    fun getRangeOrNull(option: String): DoubleSpan? {
         val pair = get(option)
         if ((pair is List<*> && pair.size == 2 && pair.all { it is Number }) != true) {
             return null
@@ -173,7 +180,7 @@ open class OptionsAccessor(
         val upper = (pair.last() as Number).toDouble()
 
         return try {
-            ClosedRange(lower, upper)
+            DoubleSpan(lower, upper)
         } catch (ex: Throwable) {
             null
         }

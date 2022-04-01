@@ -11,7 +11,7 @@ import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
 
-class FacetWrap(
+class FacetWrap constructor(
     private val facets: List<String>,
     levels: List<List<Any>>,
     private val nrow: Int?,
@@ -19,6 +19,7 @@ class FacetWrap(
     private val direction: Direction,
     facetOrdering: List<Int>,
     private val facetFormatters: List<(Any) -> String>,
+    scales: FacetScales = FacetScales.FIXED
 ) : PlotFacets() {
 
     override val isDefined: Boolean = true
@@ -28,6 +29,12 @@ class FacetWrap(
     override val colCount: Int = shape.first
     override val rowCount: Int = shape.second
     override val variables: List<String> = facets
+
+    override val freeHScale: Boolean =
+        scales == FacetScales.FREE || scales == FacetScales.FREE_X
+
+    override val freeVScale: Boolean =
+        scales == FacetScales.FREE || scales == FacetScales.FREE_Y
 
     /**
      * @return List of Dataframes, one Dataframe per tile.
@@ -90,17 +97,17 @@ class FacetWrap(
         for ((i, tileLabelTuple) in tileLabels.withIndex()) {
             val col = toCol(i)
             val row = toRow(i)
-//            val nextRowIndex = toIndex(col, row + 1)
-//            val hasXAxis = nextRowIndex >= numTiles
-            val hasXAxis = isBottom(col, row)
-            val hasYAxis = col == 0
+            val hasHAxis = isBottom(col, row) || freeHScale
+            val hasVAxis = col == 0 || freeVScale
 
             infos.add(
                 FacetTileInfo(
                     col, row,
                     colLabs = tileLabelTuple,
                     null,
-                    hasXAxis, hasYAxis,
+                    hasHAxis = hasHAxis,
+                    hasVAxis = hasVAxis,
+                    isBottom = isBottom(col, row),
                     trueIndex = i
                 )
             )

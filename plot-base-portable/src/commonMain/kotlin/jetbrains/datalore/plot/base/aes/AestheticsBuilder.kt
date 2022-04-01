@@ -6,11 +6,12 @@
 package jetbrains.datalore.plot.base.aes
 
 import jetbrains.datalore.base.function.Function
-import jetbrains.datalore.base.gcommon.collect.ClosedRange
+import jetbrains.datalore.base.interval.DoubleSpan
 import jetbrains.datalore.base.values.Color
 import jetbrains.datalore.plot.base.Aes
 import jetbrains.datalore.plot.base.Aes.Companion.ALPHA
 import jetbrains.datalore.plot.base.Aes.Companion.ANGLE
+import jetbrains.datalore.plot.base.Aes.Companion.BINWIDTH
 import jetbrains.datalore.plot.base.Aes.Companion.COLOR
 import jetbrains.datalore.plot.base.Aes.Companion.FAMILY
 import jetbrains.datalore.plot.base.Aes.Companion.FILL
@@ -29,9 +30,11 @@ import jetbrains.datalore.plot.base.Aes.Companion.SHAPE
 import jetbrains.datalore.plot.base.Aes.Companion.SIZE
 import jetbrains.datalore.plot.base.Aes.Companion.SLOPE
 import jetbrains.datalore.plot.base.Aes.Companion.SPEED
+import jetbrains.datalore.plot.base.Aes.Companion.STACKSIZE
 import jetbrains.datalore.plot.base.Aes.Companion.SYM_X
 import jetbrains.datalore.plot.base.Aes.Companion.SYM_Y
 import jetbrains.datalore.plot.base.Aes.Companion.UPPER
+import jetbrains.datalore.plot.base.Aes.Companion.VIOLINWIDTH
 import jetbrains.datalore.plot.base.Aes.Companion.VJUST
 import jetbrains.datalore.plot.base.Aes.Companion.WEIGHT
 import jetbrains.datalore.plot.base.Aes.Companion.WIDTH
@@ -48,6 +51,7 @@ import jetbrains.datalore.plot.base.Aes.Companion.YMIN
 import jetbrains.datalore.plot.base.Aes.Companion.Z
 import jetbrains.datalore.plot.base.Aesthetics
 import jetbrains.datalore.plot.base.DataPointAesthetics
+import jetbrains.datalore.plot.base.ScaleMapper
 import jetbrains.datalore.plot.base.render.linetype.LineType
 import jetbrains.datalore.plot.base.render.point.PointShape
 import jetbrains.datalore.plot.common.data.SeriesUtil
@@ -109,6 +113,10 @@ class AestheticsBuilder @JvmOverloads constructor(private var myDataPointCount: 
 
     fun width(v: (Int) -> Double?): AestheticsBuilder {
         return aes(WIDTH, v)
+    }
+
+    fun violinwidth(v: (Int) -> Double?): AestheticsBuilder {
+        return aes(VIOLINWIDTH, v)
     }
 
     fun weight(v: (Int) -> Double?): AestheticsBuilder {
@@ -184,7 +192,7 @@ class AestheticsBuilder @JvmOverloads constructor(private var myDataPointCount: 
         return aes(SYM_Y, v)
     }
 
-    fun <T> constantAes(aes: Aes<T>, v: T): AestheticsBuilder {
+    fun <T> constantAes(aes: Aes<T>, v: T?): AestheticsBuilder {
         myConstantAes.add(aes)
         myIndexFunctionMap[aes] = constant(v)
         return this
@@ -208,7 +216,7 @@ class AestheticsBuilder @JvmOverloads constructor(private var myDataPointCount: 
         private val myConstantAes: Set<Aes<*>> = HashSet(b.myConstantAes)
 
         private val myResolutionByAes = HashMap<Aes<*>, Double>()
-        private val myRangeByNumericAes = HashMap<Aes<Double>, ClosedRange<Double>?>()
+        private val myRangeByNumericAes = HashMap<Aes<Double>, DoubleSpan?>()
 
         override val isEmpty: Boolean
             get() = myDataPointCount == 0
@@ -239,16 +247,16 @@ class AestheticsBuilder @JvmOverloads constructor(private var myDataPointCount: 
             }
         }
 
-        override fun range(aes: Aes<Double>): ClosedRange<Double>? {
+        override fun range(aes: Aes<Double>): DoubleSpan? {
             if (!myRangeByNumericAes.containsKey(aes)) {
                 val r = when {
-                    myDataPointCount <= 0 ->
-                        ClosedRange(0.0, 0.0)
+                    myDataPointCount <= 0 -> null
+//                        DoubleSpan(0.0, 0.0)
                     myConstantAes.contains(aes) -> {
                         // constant should not be null
                         val v = numericValues(aes).iterator().next()!!
                         if (v.isFinite()) {
-                            ClosedRange(v, v)
+                            DoubleSpan(v, v)
                         } else null
                     }
                     else -> {
@@ -390,12 +398,24 @@ class AestheticsBuilder @JvmOverloads constructor(private var myDataPointCount: 
             return get(SIZE)
         }
 
+        override fun stacksize(): Double {
+            return get(STACKSIZE)
+        }
+
         override fun width(): Double {
             return get(WIDTH)
         }
 
         override fun height(): Double {
             return get(HEIGHT)
+        }
+
+        override fun binwidth(): Double {
+            return get(BINWIDTH)
+        }
+
+        override fun violinwidth(): Double {
+            return get(VIOLINWIDTH)
         }
 
         override fun weight(): Double {
@@ -462,7 +482,7 @@ class AestheticsBuilder @JvmOverloads constructor(private var myDataPointCount: 
             return get(YEND)
         }
 
-        override fun label(): Any? {
+        override fun label(): Any {
             return get(LABEL)
         }
 
@@ -534,7 +554,7 @@ class AestheticsBuilder @JvmOverloads constructor(private var myDataPointCount: 
             return { index -> v[index] }
         }
 
-        fun <T> listMapper(v: List<Double?>, f: (Double?) -> T?): (Int) -> T? {
+        fun <T> listMapper(v: List<Double?>, f: ScaleMapper<T>): (Int) -> T? {
             return { value -> f(v[value]) }
         }
     }

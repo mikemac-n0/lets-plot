@@ -38,6 +38,7 @@ class PointRangeGeom : GeomBase() {
     ) {
         val geomHelper = GeomHelper(pos, coord, ctx)
         val helper = geomHelper.createSvgElementHelper()
+        val colorsByDataPoint = HintColorUtil.createColorMarkerMapper(GeomKind.POINT_RANGE, ctx)
 
         for (p in GeomUtil.withDefined(aesthetics.dataPoints(), Aes.X, Aes.Y, Aes.YMIN, Aes.YMAX)) {
             val x = p.x()!!
@@ -68,7 +69,8 @@ class PointRangeGeom : GeomBase() {
             listOf(Aes.YMAX, Aes.YMIN),
             aesthetics, pos, coord, ctx,
             rectangleByDataPoint(fattenMidPoint),
-            { HintColorUtil.fromColor(it) }
+            { HintColorUtil.colorWithAlpha(it) },
+            colorMarkerMapper = colorsByDataPoint
         )
     }
 

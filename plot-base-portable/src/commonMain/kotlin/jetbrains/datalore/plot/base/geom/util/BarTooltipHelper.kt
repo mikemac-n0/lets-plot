@@ -8,7 +8,7 @@ package jetbrains.datalore.plot.base.geom.util
 import jetbrains.datalore.base.geometry.DoubleRectangle
 import jetbrains.datalore.base.values.Color
 import jetbrains.datalore.plot.base.*
-import jetbrains.datalore.plot.base.interact.GeomTargetCollector
+import jetbrains.datalore.plot.base.interact.GeomTargetCollector.TooltipParams.Companion.tooltip
 import jetbrains.datalore.plot.base.interact.TipLayoutHint
 
 object BarTooltipHelper {
@@ -19,7 +19,8 @@ object BarTooltipHelper {
         coord: CoordinateSystem,
         ctx: GeomContext,
         rectFactory: (DataPointAesthetics) -> DoubleRectangle?,
-        colorFactory: (DataPointAesthetics) -> Color,
+        fillColorMapper: (DataPointAesthetics) -> Color? = { null },
+        colorMarkerMapper: (DataPointAesthetics) -> List<Color> = HintColorUtil.createColorMarkerMapper(null, ctx),
         defaultTooltipKind: TipLayoutHint.Kind? = null
     ) {
         val helper = GeomHelper(pos, coord, ctx)
@@ -54,10 +55,11 @@ object BarTooltipHelper {
             ctx.targetCollector.addRectangle(
                 p.index(),
                 helper.toClient(rect, p),
-                GeomTargetCollector.TooltipParams.params()
-                    .setTipLayoutHints(hintConfigs.hints)
-//                    .setColor(HintColorUtil.fromColor(p))
-                    .setColor(colorFactory(p)),
+                tooltip {
+                    tipLayoutHints = hintConfigs.hints
+                    fillColor = fillColorMapper(p)
+                    markerColors = colorMarkerMapper(p)
+                },
                 tooltipKind = defaultTooltipKind ?: if (ctx.flipped) {
                     TipLayoutHint.Kind.VERTICAL_TOOLTIP
                 } else {

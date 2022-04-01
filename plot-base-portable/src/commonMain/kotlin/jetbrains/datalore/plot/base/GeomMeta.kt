@@ -101,6 +101,16 @@ object GeomMeta {
                 Aes.SIZE
             )
 
+            GeomKind.DOT_PLOT -> listOf(
+                Aes.X,
+                Aes.BINWIDTH,
+                Aes.STACKSIZE,
+                Aes.COLOR,
+                Aes.FILL,
+                Aes.ALPHA,
+                Aes.SIZE
+            )
+
             GeomKind.TILE,
             GeomKind.BIN_2D -> listOf(
                 Aes.X, Aes.Y,
@@ -209,6 +219,31 @@ object GeomMeta {
                 Aes.SHAPE,
                 Aes.SIZE, // line width
                 Aes.WIDTH
+            )
+
+            GeomKind.VIOLIN -> listOf(
+                Aes.X,
+                Aes.Y,
+                Aes.VIOLINWIDTH,
+
+                Aes.ALPHA,
+                Aes.COLOR,
+                Aes.FILL,
+                Aes.LINETYPE,
+                Aes.SIZE,
+                Aes.WIDTH
+            )
+
+            GeomKind.Y_DOT_PLOT -> listOf(
+                Aes.X,
+                Aes.Y,
+                Aes.BINWIDTH,
+                Aes.STACKSIZE,
+
+                Aes.COLOR,
+                Aes.FILL,
+                Aes.ALPHA,
+                Aes.SIZE
             )
 
             GeomKind.RIBBON -> listOf(

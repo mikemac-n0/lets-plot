@@ -12,7 +12,7 @@ import java.awt.Dimension
 fun main() {
     with(FacetWrapDirVDemo()) {
         PlotSpecsDemoWindowBatik(
-            "Facet wrap",
+            "Facet wrap, dir='v'",
             plotSpecList(),
             2,
             Dimension(600, 600)

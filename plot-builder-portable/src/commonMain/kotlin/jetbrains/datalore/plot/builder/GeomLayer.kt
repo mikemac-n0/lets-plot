@@ -5,6 +5,7 @@
 
 package jetbrains.datalore.plot.builder
 
+import jetbrains.datalore.base.interval.DoubleSpan
 import jetbrains.datalore.plot.base.*
 import jetbrains.datalore.plot.base.aes.AestheticsDefaults
 import jetbrains.datalore.plot.base.geom.LiveMapProvider
@@ -23,7 +24,10 @@ interface GeomLayer {
 
     val geom: Geom
 
+    // ToDo: move: positional scales -> tile, all other scales -> plot
     val scaleMap: TypedScaleMap
+
+    val scaleMapppersNP: Map<Aes<*>, ScaleMapper<*>>
 
     val dataAccess: MappedDataAccess
 
@@ -52,6 +56,8 @@ interface GeomLayer {
     fun <T> getConstant(aes: Aes<T>): T
 
     fun <T> getDefault(aes: Aes<T>): T
+
+    fun preferableNullDomain(aes: Aes<*>): DoubleSpan
 
     fun rangeIncludesZero(aes: Aes<*>): Boolean
 

@@ -5,7 +5,7 @@
 
 package jetbrains.datalore.plot.builder.scale
 
-import jetbrains.datalore.base.gcommon.collect.ClosedRange
+import jetbrains.datalore.base.interval.DoubleSpan
 import jetbrains.datalore.plot.base.Aes
 import jetbrains.datalore.plot.base.Scale
 import jetbrains.datalore.plot.base.scale.BreaksGenerator
@@ -19,23 +19,28 @@ internal class ScaleProviderBuilderTest {
     @Test
     fun withBreaksGenerator() {
         val bg = object : BreaksGenerator {
-            override fun generateBreaks(domain: ClosedRange<Double>, targetCount: Int): ScaleBreaks {
+            override fun generateBreaks(domain: DoubleSpan, targetCount: Int): ScaleBreaks {
                 return ScaleBreaks.EMPTY
             }
 
-            override fun labelFormatter(domain: ClosedRange<Double>, targetCount: Int): (Any) -> String {
+            override fun labelFormatter(domain: DoubleSpan, targetCount: Int): (Any) -> String {
                 return { "hi" }
             }
 
-            override fun defaultFormatter(domain: ClosedRange<Double>, targetCount: Int) = labelFormatter(domain, targetCount)
+            override fun defaultFormatter(domain: DoubleSpan, targetCount: Int) =
+                labelFormatter(domain, targetCount)
         }
 
         val builder = ScaleProviderBuilder(Aes.X).breaksGenerator(bg)
 
         val scaleProvider = builder.build()
         // continuous scale
-        val scale = scaleProvider.createScale("X-scale", ClosedRange.singleton(0.0))
-
+        val scale = scaleProvider.createScale(
+            "X-scale",
+            Transforms.IDENTITY,
+            continuousRange = false,
+            guideBreaks = null,
+        )
 
         fun actual(scale: Scale<*>): BreaksGenerator {
             assertTrue(

@@ -2,8 +2,9 @@
 #  Copyright (c) 2020. JetBrains s.r.o.
 #  Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
-from .core import FeatureSpec
 from typing import List
+
+from lets_plot.plot.core import FeatureSpec, _filter_none
 
 #
 # Tooltips
@@ -72,8 +73,11 @@ class layer_tooltips(FeatureSpec):
         """
         Initialize self.
 
-        :param variables: List of strings
+        Parameters
+        ----------
+        variables : list of str
             Variable names to place in the general tooltip with default formatting.
+
         """
 
         self._tooltip_formats: List = []
@@ -82,6 +86,7 @@ class layer_tooltips(FeatureSpec):
         self._tooltip_min_width = None
         self._tooltip_color = None
         self._tooltip_variables = variables
+        self._tooltip_title = None
         super().__init__('tooltips', name=None)
 
     def as_dict(self):
@@ -97,14 +102,13 @@ class layer_tooltips(FeatureSpec):
         --------
         .. jupyter-execute::
             :linenos:
-            :emphasize-lines: 7
+            :emphasize-lines: 6
 
             from lets_plot import *
             LetsPlot.setup_html()
             layer_tooltips().format('@x', '.2f')\\
                             .line('@x @y')\\
                             .line('^fill')\\
-                            .color('black')\\
                             .as_dict()
 
         """
@@ -115,7 +119,8 @@ class layer_tooltips(FeatureSpec):
         d['tooltip_min_width'] = self._tooltip_min_width
         d['tooltip_color'] = self._tooltip_color
         d['tooltip_variables'] = self._tooltip_variables
-        return d
+        d['tooltip_title'] = self._tooltip_title
+        return _filter_none(d)
 
     def format(self, field=None, format=None):
         """
@@ -383,34 +388,36 @@ class layer_tooltips(FeatureSpec):
 
     def color(self, value):
         """
-        The color for the general tooltip.
+        Function `color(value)` is deprecated.
+
+        """
+        print("WARN: The function color() is deprecated and is no longer supported.")
+
+        self._tooltip_color = value
+        return self
+
+    def title(self, value):
+        """
+        Line with title to show in the tooltip.
+        Adds a title template to the tooltip.
 
         Parameters
         ----------
         value : str
-            Color of the tooltip.
+            Enriched string which becomes the title of the tooltip.
 
         Returns
         -------
         `layer_tooltips`
             Layer tooltips specification.
 
-        Examples
-        --------
-        .. jupyter-execute::
-            :linenos:
-            :emphasize-lines: 10
+        Notes
+        -----
+        The specification rules are the same as for the `lines()` function:
+        variables and aesthetics can be used in the template.
+        The resulting string will be at the beginning of the general tooltip, centered and highlighted in bold.
+        A long title can be split into multiple lines using `\\\\n` as a text separator.
 
-            import numpy as np
-            from lets_plot import *
-            LetsPlot.setup_html()
-            n = 100
-            np.random.seed(42)
-            x = np.random.normal(size=n)
-            y = np.random.normal(size=n)
-            ggplot({'x': x, 'y': y}, aes('x', 'y')) + \\
-                geom_point(tooltips=layer_tooltips().line('(^x, ^y)')\\
-                                                    .color('magenta'))
         """
-        self._tooltip_color = value
+        self._tooltip_title = value
         return self

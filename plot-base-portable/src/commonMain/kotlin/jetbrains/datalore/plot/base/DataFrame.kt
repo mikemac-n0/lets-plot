@@ -5,7 +5,7 @@
 
 package jetbrains.datalore.plot.base
 
-import jetbrains.datalore.base.gcommon.collect.ClosedRange
+import jetbrains.datalore.base.interval.DoubleSpan
 import jetbrains.datalore.base.logging.PortableLogging
 import jetbrains.datalore.plot.common.data.SeriesUtil
 import kotlin.jvm.JvmOverloads
@@ -13,9 +13,10 @@ import kotlin.jvm.JvmOverloads
 class DataFrame private constructor(builder: Builder) {
     private val myVectorByVar: Map<Variable, List<*>>
     private val myIsNumeric: MutableMap<Variable, Boolean>
+    private val myIsDateTime: MutableMap<Variable, Boolean>
 
     // volatile variables (yet)
-    private val myRanges = HashMap<Variable, ClosedRange<Double>?>()
+    private val myRanges = HashMap<Variable, DoubleSpan?>()
     private val myDistinctValues = HashMap<Variable, Set<Any>>()
 
     class OrderSpec(
@@ -34,6 +35,7 @@ class DataFrame private constructor(builder: Builder) {
         assertAllSeriesAreSameSize(builder.myVectorByVar)
         myVectorByVar = HashMap(builder.myVectorByVar)
         myIsNumeric = HashMap(builder.myIsNumeric)
+        myIsDateTime = HashMap(builder.myIsDateTime)
         myOrderSpecs = builder.myOrderSpecs
         myOrderSpecs.forEach { orderSpec ->
             myDistinctValues[orderSpec.variable] = getOrderedDistinctValues(orderSpec)
@@ -126,7 +128,12 @@ class DataFrame private constructor(builder: Builder) {
         return myIsNumeric[variable]!!
     }
 
-    fun range(variable: Variable): ClosedRange<Double>? {
+    fun isDateTime(variable: Variable): Boolean {
+        assertDefined(variable)
+        return myIsDateTime.containsKey(variable)
+    }
+
+    fun range(variable: Variable): DoubleSpan? {
         if (!myRanges.containsKey(variable)) {
             val v = getNumeric(variable)
             val r = SeriesUtil.range(v)
@@ -137,6 +144,10 @@ class DataFrame private constructor(builder: Builder) {
 
     fun builder(): Builder {
         return Builder(this)
+    }
+
+    fun slice(indices: Iterable<Int>): DataFrame {
+        return Builder(this, indices).build()
     }
 
     private fun assertDefined(variable: Variable) {
@@ -231,7 +242,7 @@ class DataFrame private constructor(builder: Builder) {
         } else {
             get(orderSpec.variable).zip(get(orderSpec.orderBy))
         }
-            .filter { isValueComparable(it.second) && isValueComparable(it.first)}
+            .filter { isValueComparable(it.second) && isValueComparable(it.first) }
             .sortedWith(compareBy({ it.second as Comparable<*> }, { it.first as Comparable<*> }))
             .mapNotNull { it.first }
 
@@ -254,6 +265,7 @@ class DataFrame private constructor(builder: Builder) {
     class Builder {
         internal val myVectorByVar = HashMap<Variable, List<*>>()
         internal val myIsNumeric = HashMap<Variable, Boolean>()
+        internal val myIsDateTime = HashMap<Variable, Boolean>()
         internal val myOrderSpecs = ArrayList<OrderSpec>()
 
         constructor()
@@ -261,12 +273,25 @@ class DataFrame private constructor(builder: Builder) {
         constructor(data: DataFrame) {
             myVectorByVar.putAll(data.myVectorByVar)
             myIsNumeric.putAll(data.myIsNumeric)
+            myIsDateTime.putAll(data.myIsDateTime)
+            myOrderSpecs.addAll(data.myOrderSpecs)
+        }
+
+        internal constructor(data: DataFrame, indices: Iterable<Int>) {
+            val newVectors = data.myVectorByVar.mapValues { (_, serie) ->
+                serie.slice(indices)
+            }
+
+            myVectorByVar.putAll(newVectors)
+            myIsNumeric.putAll(data.myIsNumeric)
+            myIsDateTime.putAll(data.myIsDateTime)
             myOrderSpecs.addAll(data.myOrderSpecs)
         }
 
         fun put(variable: Variable, v: List<*>): Builder {
             putIntern(variable, v)
             myIsNumeric.remove(variable)  // unknown state
+            myIsDateTime.remove(variable)
             return this
         }
 
@@ -282,13 +307,20 @@ class DataFrame private constructor(builder: Builder) {
             return this
         }
 
+        fun putDateTime(variable: Variable, v: List<*>): Builder {
+            putIntern(variable, v)
+            myIsDateTime[variable] = true
+            return this
+        }
+
         internal fun putIntern(variable: Variable, v: List<*>) {
             myVectorByVar[variable] = ArrayList(v)
         }
 
-        fun  remove(variable: Variable): Builder {
+        fun remove(variable: Variable): Builder {
             myVectorByVar.remove(variable)
             myIsNumeric.remove(variable)
+            myIsDateTime.remove(variable)
             return this
         }
 

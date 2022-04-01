@@ -98,6 +98,12 @@ open class AestheticsDefaults {
                 .update(Aes.COLOR, Color.TRANSPARENT)    // no outline (transparent)
         }
 
+        fun dotplot(): AestheticsDefaults {
+            return AestheticsDefaults()
+                .update(Aes.COLOR, Color.TRANSPARENT)    // no outline (transparent)
+                .updateInLegend(Aes.SIZE, 5.0)
+        }
+
         fun tile(): AestheticsDefaults {
             return AestheticsDefaults()
                 .update(Aes.COLOR, Color.TRANSPARENT)    // no outline (transparent)
@@ -141,6 +147,18 @@ open class AestheticsDefaults {
 
         fun boxplot(): AestheticsDefaults {
             return crossBar()
+        }
+
+        fun violin(): AestheticsDefaults {
+            return AestheticsDefaults()
+                .update(Aes.COLOR, Color.BLACK)
+                .update(Aes.FILL, Color.WHITE)
+        }
+
+        fun ydotplot(): AestheticsDefaults {
+            return AestheticsDefaults()
+                .update(Aes.COLOR, Color.TRANSPARENT)    // no outline (transparent)
+                .updateInLegend(Aes.SIZE, 5.0)
         }
 
         fun livemap(displayMode: LivemapConstants.DisplayMode): AestheticsDefaults {

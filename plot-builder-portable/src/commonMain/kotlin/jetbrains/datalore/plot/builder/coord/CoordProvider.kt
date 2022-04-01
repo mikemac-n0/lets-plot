@@ -5,50 +5,59 @@
 
 package jetbrains.datalore.plot.builder.coord
 
-import jetbrains.datalore.base.gcommon.collect.ClosedRange
+import jetbrains.datalore.base.interval.DoubleSpan
 import jetbrains.datalore.base.geometry.DoubleVector
 import jetbrains.datalore.plot.base.CoordinateSystem
 import jetbrains.datalore.plot.base.Scale
+import jetbrains.datalore.plot.base.ScaleMapper
 import jetbrains.datalore.plot.base.scale.ScaleBreaks
 
 interface CoordProvider {
     val flipAxis: Boolean
 
     fun with(
-        xLim: ClosedRange<Double>?,
-        yLim: ClosedRange<Double>?,
+        xLim: DoubleSpan?,
+        yLim: DoubleSpan?,
         flipped: Boolean
     ): CoordProvider
 
     fun createCoordinateSystem(
-        xDomain: ClosedRange<Double>,
+        xDomain: DoubleSpan,
         xAxisLength: Double,
-        yDomain: ClosedRange<Double>,
+        yDomain: DoubleSpan,
         yAxisLength: Double
     ): CoordinateSystem
 
     fun buildAxisScaleX(
         scaleProto: Scale<Double>,
-        domain: ClosedRange<Double>,
-        axisLength: Double,
+        domain: DoubleSpan,
         breaks: ScaleBreaks
     ): Scale<Double>
 
     fun buildAxisScaleY(
         scaleProto: Scale<Double>,
-        domain: ClosedRange<Double>,
-        axisLength: Double,
+        domain: DoubleSpan,
         breaks: ScaleBreaks
     ): Scale<Double>
 
+    fun buildAxisXScaleMapper(
+        domain: DoubleSpan,
+        axisLength: Double,
+    ): ScaleMapper<Double>
+
+    fun buildAxisYScaleMapper(
+        domain: DoubleSpan,
+        axisLength: Double,
+    ): ScaleMapper<Double>
+
     fun adjustDomains(
-        hDomain: ClosedRange<Double>,
-        vDomain: ClosedRange<Double>,
-    ): Pair<ClosedRange<Double>, ClosedRange<Double>>
+        hDomain: DoubleSpan,
+        vDomain: DoubleSpan,
+    ): Pair<DoubleSpan, DoubleSpan>
 
     fun adjustGeomSize(
-        hDomain: ClosedRange<Double>,
-        vDomain: ClosedRange<Double>,
+        hDomain: DoubleSpan,
+        vDomain: DoubleSpan,
         geomSize: DoubleVector
     ): DoubleVector
 }

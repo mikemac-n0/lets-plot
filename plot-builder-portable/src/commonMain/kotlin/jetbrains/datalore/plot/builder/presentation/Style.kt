@@ -22,6 +22,8 @@ object Style {
     const val PLOT_CONTAINER = "plt-container"
     const val PLOT = "plt-plot"
     const val PLOT_TITLE = "plt-plot-title"
+    const val PLOT_SUBTITLE = "plt-plot-subtitle"
+    const val PLOT_CAPTION = "plt-plot-caption"
 
     const val AXIS = "plt-axis"
 
@@ -76,7 +78,9 @@ object Style {
 
     private fun selector(labelSpec: PlotLabelSpec): String {
         return when (labelSpec) {
-            PlotLabelSpec.PLOT_TITLE -> ".$PLOT_TITLE"
+            PlotLabelSpec.PLOT_TITLE -> ".$PLOT_TITLE text"
+            PlotLabelSpec.PLOT_SUBTITLE -> ".$PLOT_SUBTITLE text"
+            PlotLabelSpec.PLOT_CAPTION -> ".$PLOT_CAPTION text"
             PlotLabelSpec.AXIS_TICK -> ".$AXIS .$TICK text"
             PlotLabelSpec.AXIS_TICK_SMALL -> ".$AXIS.$SMALL_TICK_FONT .$TICK text"
             PlotLabelSpec.AXIS_TITLE -> ".$AXIS_TITLE text"

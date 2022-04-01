@@ -5,12 +5,12 @@
 
 package jetbrains.datalore.plot.base.scale.transform
 
-import jetbrains.datalore.base.gcommon.collect.ClosedRange
+import jetbrains.datalore.base.interval.DoubleSpan
 import jetbrains.datalore.plot.base.ContinuousTransform
 import jetbrains.datalore.plot.base.scale.BreaksGenerator
-import jetbrains.datalore.plot.base.scale.MapperUtil
 import jetbrains.datalore.plot.base.scale.ScaleBreaks
-import jetbrains.datalore.plot.common.data.SeriesUtil
+import jetbrains.datalore.plot.base.scale.ScaleUtil
+import jetbrains.datalore.plot.common.data.SeriesUtil.isBeyondPrecision
 
 object Transforms {
     val IDENTITY: ContinuousTransform = IdentityTransform()
@@ -18,12 +18,16 @@ object Transforms {
     val SQRT: ContinuousTransform = SqrtTransform()
     val LOG10: ContinuousTransform = Log10Transform()
 
+    fun continuousWithLimits(actual: ContinuousTransform, limits: Pair<Double?, Double?>): ContinuousTransform {
+        return ContinuousTransformWithLimits(actual, limits.first, limits.second)
+    }
+
     fun createBreaksGeneratorForTransformedDomain(
         transform: ContinuousTransform,
         labelFormatter: ((Any) -> String)? = null,
         valueFormatter: ((Any) -> String)? = null
     ): BreaksGenerator {
-        val breaksGenerator: BreaksGenerator = when (transform) {
+        val breaksGenerator: BreaksGenerator = when (transform.unwrap()) {
             IDENTITY -> LinearBreaksGen(labelFormatter, valueFormatter)
             REVERSE -> LinearBreaksGen(labelFormatter, valueFormatter)
             SQRT -> NonlinearBreaksGen(SQRT, labelFormatter, valueFormatter)
@@ -35,39 +39,36 @@ object Transforms {
     }
 
     fun ensureApplicableDomain(
-        dataRange: ClosedRange<Double>?,
+        dataRange: DoubleSpan?,
         transform: ContinuousTransform
-    ): ClosedRange<Double> {
+    ): DoubleSpan {
         if (dataRange == null) {
             return transform.createApplicableDomain()
         }
 
         val domain = transform.toApplicableDomain(dataRange)
-        return when {
-            SeriesUtil.isSubTiny(domain) ->
-                transform.createApplicableDomain(domain.upperEnd)
-            else ->
-                domain
+        return when (isBeyondPrecision(domain)) {
+            true -> transform.createApplicableDomain(domain.upperEnd)
+            false -> domain
         }
     }
-
 
     class BreaksGeneratorForTransformedDomain(
         private val transform: ContinuousTransform,
         val breaksGenerator: BreaksGenerator
     ) : BreaksGenerator {
-        override fun labelFormatter(domain: ClosedRange<Double>, targetCount: Int): (Any) -> String {
-            val domainBeforeTransform = MapperUtil.map(domain, transform::applyInverse)
+        override fun labelFormatter(domain: DoubleSpan, targetCount: Int): (Any) -> String {
+            val domainBeforeTransform = ScaleUtil.applyInverseTransform(domain, transform)
             return breaksGenerator.labelFormatter(domainBeforeTransform, targetCount)
         }
 
-        override fun defaultFormatter(domain: ClosedRange<Double>, targetCount: Int): (Any) -> String {
-            val domainBeforeTransform = MapperUtil.map(domain, transform::applyInverse)
+        override fun defaultFormatter(domain: DoubleSpan, targetCount: Int): (Any) -> String {
+            val domainBeforeTransform = ScaleUtil.applyInverseTransform(domain, transform)
             return breaksGenerator.defaultFormatter(domainBeforeTransform, targetCount)
         }
 
-        override fun generateBreaks(domain: ClosedRange<Double>, targetCount: Int): ScaleBreaks {
-            val domainBeforeTransform = MapperUtil.map(domain, transform::applyInverse)
+        override fun generateBreaks(domain: DoubleSpan, targetCount: Int): ScaleBreaks {
+            val domainBeforeTransform = ScaleUtil.applyInverseTransform(domain, transform)
             val scaleBreaks = breaksGenerator.generateBreaks(domainBeforeTransform, targetCount)
             val originalBreaks = scaleBreaks.domainValues
             val transformedBreaks = transform.apply(originalBreaks).map {

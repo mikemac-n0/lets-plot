@@ -5,10 +5,12 @@
 
 package jetbrains.datalore.plot.builder.scale.provider
 
-import jetbrains.datalore.base.gcommon.collect.ClosedRange
+import jetbrains.datalore.base.interval.DoubleSpan
 import jetbrains.datalore.base.values.Color
 import jetbrains.datalore.base.values.HSV
 import jetbrains.datalore.plot.base.ContinuousTransform
+import jetbrains.datalore.plot.base.DiscreteTransform
+import jetbrains.datalore.plot.base.ScaleMapper
 import jetbrains.datalore.plot.base.scale.MapperUtil
 import jetbrains.datalore.plot.builder.scale.GuideMapper
 import kotlin.math.max
@@ -62,18 +64,13 @@ class ColorHueMapperProvider(
         myToHSV = HSV(toHue, saturation, value)
     }
 
-    override fun createDiscreteMapper(domainValues: Collection<*>): GuideMapper<Color> {
-        return createDiscreteMapper(domainValues, myFromHSV, myToHSV)
+    override fun createDiscreteMapper(discreteTransform: DiscreteTransform): ScaleMapper<Color> {
+        return createDiscreteMapper(discreteTransform.effectiveDomainTransformed, myFromHSV, myToHSV)
     }
 
-    override fun createContinuousMapper(
-        domain: ClosedRange<Double>,
-        lowerLimit: Double?,
-        upperLimit: Double?,
-        trans: ContinuousTransform
-    ): GuideMapper<Color> {
+    override fun createContinuousMapper(domain: DoubleSpan, trans: ContinuousTransform): GuideMapper<Color> {
         @Suppress("NAME_SHADOWING")
-        val domain = MapperUtil.rangeWithLimitsAfterTransform(domain, lowerLimit, upperLimit, trans)
+        val domain = MapperUtil.rangeWithLimitsAfterTransform2(domain, trans)
         return createContinuousMapper(domain, myHSVIntervals)
     }
 
@@ -81,7 +78,7 @@ class ColorHueMapperProvider(
         private const val DEF_SATURATION = 50.0
         private const val DEF_VALUE = 90.0
         private const val DEF_START_HUE = 0.0
-        private val DEF_HUE_RANGE = ClosedRange<Double>(15.0, 375.0) // ggplot2 (R): c(0, 360) + 15
+        private val DEF_HUE_RANGE = DoubleSpan(15.0, 375.0) // ggplot2 (R): c(0, 360) + 15
 
         val DEFAULT = ColorHueMapperProvider(
             null,
@@ -92,11 +89,11 @@ class ColorHueMapperProvider(
             Color.GRAY
         )
 
-        private fun normalizeHueRange(hueRange: List<Double>?): ClosedRange<Double> {
+        private fun normalizeHueRange(hueRange: List<Double>?): DoubleSpan {
             return if (hueRange == null || hueRange.size != 2) {
                 DEF_HUE_RANGE
             } else {
-                ClosedRange<Double>(
+                DoubleSpan(
                     min(hueRange[0], hueRange[1]),
                     max(hueRange[0], hueRange[1])
                 )

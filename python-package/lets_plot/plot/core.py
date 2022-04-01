@@ -110,7 +110,7 @@ def layer(geom=None, stat=None, data=None, mapping=None, position=None, **kwargs
     using geom_* or stat_* calls but they can be created directly using this function.
 
     Examples
-    ---------
+    --------
     .. jupyter-execute::
         :linenos:
         :emphasize-lines: 8
@@ -130,6 +130,10 @@ def layer(geom=None, stat=None, data=None, mapping=None, position=None, **kwargs
     return LayerSpec(**locals())
 
 
+def _filter_none(original: dict) -> dict:
+    return {k: v for k, v in original.items() if v is not None}
+
+
 #
 #  -----------------------------------
 #  Specs
@@ -145,7 +149,7 @@ def _specs_to_dict(opts_raw):
         else:
             opts[k] = v
 
-    return opts
+    return _filter_none(opts)
 
 
 class FeatureSpec():

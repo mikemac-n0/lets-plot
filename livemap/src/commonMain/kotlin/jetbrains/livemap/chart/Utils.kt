@@ -5,8 +5,10 @@
 
 package jetbrains.livemap.chart
 
+import jetbrains.datalore.base.values.Color
 import jetbrains.datalore.vis.canvas.Context2d
 import kotlin.math.PI
+import kotlin.math.min
 import kotlin.math.sqrt
 
 object Utils {
@@ -125,4 +127,9 @@ object Utils {
         ctx.lineTo(-r, 0.0)
         ctx.lineTo(0.0, -r)
     }
+
+    fun changeAlphaWithMin(color: Color, newAlpha: Int?): Color {
+        return newAlpha?.let { min(it, color.alpha) }?.let(color::changeAlpha) ?: color
+    }
+
 }

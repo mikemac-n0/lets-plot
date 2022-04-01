@@ -7,14 +7,15 @@ package jetbrains.datalore.plot.builder.interact.loc
 
 import jetbrains.datalore.base.geometry.DoubleRectangle
 import jetbrains.datalore.base.geometry.DoubleVector
+import jetbrains.datalore.base.values.Color
 import jetbrains.datalore.plot.base.Aes
 import jetbrains.datalore.plot.base.DataFrame
 import jetbrains.datalore.plot.base.GeomKind
-import jetbrains.datalore.plot.base.interact.*
-import jetbrains.datalore.plot.builder.interact.GeomInteractionBuilder
-import jetbrains.datalore.base.values.Color
-import jetbrains.datalore.plot.base.coord.Coords
+import jetbrains.datalore.plot.base.interact.GeomTargetCollector.TooltipParams.Companion.tooltip
+import jetbrains.datalore.plot.base.interact.GeomTargetLocator
+import jetbrains.datalore.plot.base.interact.MappedDataAccess
 import jetbrains.datalore.plot.builder.interact.GeomInteraction
+import jetbrains.datalore.plot.builder.interact.GeomInteractionBuilder
 import org.mockito.Mockito
 import kotlin.test.Test
 import kotlin.test.assertNotNull
@@ -88,7 +89,9 @@ class LayerTargetCollectorWithLocatorTest {
                     index = 0,
                     point = point,
                     radius = radius,
-                    tooltipParams = GeomTargetCollector.TooltipParams.params().setColor(color)
+                    tooltipParams = tooltip {
+                        markerColors = listOf(color)
+                    }
                 )
             }
         }
@@ -98,7 +101,9 @@ class LayerTargetCollectorWithLocatorTest {
                 addRectangle(
                     index = 0,
                     rectangle = rect,
-                    tooltipParams = GeomTargetCollector.TooltipParams.params().setColor(color)
+                    tooltipParams = tooltip {
+                        markerColors = listOf(color)
+                    }
                 )
             }
         }

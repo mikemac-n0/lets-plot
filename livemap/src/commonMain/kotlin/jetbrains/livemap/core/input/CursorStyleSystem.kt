@@ -18,9 +18,9 @@ class CursorStyleSystem(componentManager: EcsComponentManager, private val myCur
     }
 
     override fun updateImpl(context: EcsContext, dt: Double) {
-        myInput.location?.let { location ->
+        myInput.moveEvent?.location?.let { location ->
             getEntities(COMPONENT_TYPES).find { entity ->
-                entity.get<ClickableComponent>().rect.contains(location.toDoubleVector())
+                location.inside(entity.get<ClickableComponent>())
             }?.let { entity ->
                 when (entity.get<CursorStyleComponent>().cursorStyle) {
                     CursorStyle.POINTER -> myCursorService.pointer()
@@ -28,6 +28,7 @@ class CursorStyleSystem(componentManager: EcsComponentManager, private val myCur
             } ?: myCursorService.default()
         }
     }
+
 
     companion object {
         private val COMPONENT_TYPES = listOf(

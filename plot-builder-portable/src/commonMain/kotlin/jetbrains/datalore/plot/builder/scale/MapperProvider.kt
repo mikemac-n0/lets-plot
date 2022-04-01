@@ -5,22 +5,22 @@
 
 package jetbrains.datalore.plot.builder.scale
 
-import jetbrains.datalore.base.gcommon.collect.ClosedRange
+import jetbrains.datalore.base.interval.DoubleSpan
 import jetbrains.datalore.plot.base.ContinuousTransform
+import jetbrains.datalore.plot.base.DiscreteTransform
+import jetbrains.datalore.plot.base.ScaleMapper
 
 interface MapperProvider<T> {
     /**
      * Create mapper with discrete input (domain)
      */
-    fun createDiscreteMapper(domainValues: Collection<*>): GuideMapper<T>
+    fun createDiscreteMapper(discreteTransform: DiscreteTransform): ScaleMapper<T>
 
     /**
      * Create mapper with continuous (numeric) input (domain)
      */
     fun createContinuousMapper(
-        domain: ClosedRange<Double>,
-        lowerLimit: Double?,
-        upperLimit: Double?,
+        domain: DoubleSpan,
         trans: ContinuousTransform
     ): GuideMapper<T>
 }

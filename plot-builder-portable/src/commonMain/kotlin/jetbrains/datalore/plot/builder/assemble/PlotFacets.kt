@@ -5,6 +5,7 @@
 
 package jetbrains.datalore.plot.builder.assemble
 
+import jetbrains.datalore.base.interval.DoubleSpan
 import jetbrains.datalore.plot.base.DataFrame
 import jetbrains.datalore.plot.base.data.DataFrameUtil
 import jetbrains.datalore.plot.builder.assemble.facet.FacetGrid
@@ -17,6 +18,8 @@ abstract class PlotFacets {
     abstract val rowCount: Int
     abstract val numTiles: Int
     abstract val variables: List<String>
+    abstract val freeHScale: Boolean
+    abstract val freeVScale: Boolean
 
     /**
      * @return List of Dataframes, one Dataframe per tile.
@@ -33,6 +36,15 @@ abstract class PlotFacets {
      */
     abstract fun tileInfos(): List<FacetTileInfo>
 
+    /**
+     * @param domains Transformed X-mapped data ranges by tile.
+     */
+    open fun adjustHDomains(domains: List<DoubleSpan?>): List<DoubleSpan?> = domains
+
+    /**
+     * @param domains Transformed Y-mapped data ranges by tile.
+     */
+    open fun adjustVDomains(domains: List<DoubleSpan?>): List<DoubleSpan?> = domains
 
     companion object {
         const val DEF_ORDER_DIR = 0 // no ordering
@@ -67,15 +79,7 @@ abstract class PlotFacets {
                 val levelKey = nameLevelTuple.map { it.second }
 
                 // build the data subset
-                val b = DataFrame.Builder()
-                val variables = data.variables()
-                for (variable in variables) {
-                    val source = data[variable]
-                    val target = SeriesUtil.pickAtIndices(source, indices)
-                    b.put(variable, target)
-                }
-
-                val levelData = b.build()
+                val levelData = data.slice(indices)
                 dataByLevelKey.add(levelKey to levelData)
             }
 
@@ -97,9 +101,13 @@ abstract class PlotFacets {
                     val indices = when {
                         // 'empty' data in layers with no aes mapping (only constants)
                         data.isEmpty -> emptyList()
-                        else -> {
+                        DataFrameUtil.hasVariable(data, varName) -> {
                             val variable = DataFrameUtil.findVariableOrFail(data, varName)
                             SeriesUtil.matchingIndices(data[variable], level)
+                        }
+                        else -> {
+                            // 'data' has no column 'varName' -> the entire data should be shown in each facet.
+                            (0 until data.rowCount()).toList()
                         }
                     }
                     indicesByLevel[level] = indices
@@ -182,13 +190,14 @@ abstract class PlotFacets {
         }
     }
 
-    class FacetTileInfo(
+    class FacetTileInfo constructor(
         val col: Int,
         val row: Int,
         val colLabs: List<String>,
         val rowLab: String?,
-        val xAxis: Boolean,
-        val yAxis: Boolean,
+        val hasHAxis: Boolean,
+        val hasVAxis: Boolean,
+        val isBottom: Boolean,  // true is the tile is the last one in its respective column.
         val trueIndex: Int     // tile index before re-ordering (in facet wrap)
     ) {
         override fun toString(): String {

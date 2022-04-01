@@ -31,7 +31,7 @@ object Defaults {
 
     const val TEXT_COLOR = DARK_GRAY
 
-    const val FONT_LARGE = 19
+    const val FONT_LARGE = 16
     const val FONT_MEDIUM = 15
     const val FONT_SMALL = 13
     const val FONT_X_SMALL = 11
@@ -42,6 +42,16 @@ object Defaults {
     class Common {
         object Title {
             const val FONT_SIZE = FONT_LARGE
+            val FONT_SIZE_CSS = "" + FONT_SIZE + "px"
+        }
+
+        object Subtitle {
+            const val FONT_SIZE = FONT_MEDIUM
+            val FONT_SIZE_CSS = "" + FONT_SIZE + "px"
+        }
+
+        object Caption {
+            const val FONT_SIZE = FONT_SMALL
             val FONT_SIZE_CSS = "" + FONT_SIZE + "px"
         }
 
@@ -56,11 +66,20 @@ object Defaults {
 
             const val MARGIN_BETWEEN_TOOLTIPS = 5.0
             const val DATA_TOOLTIP_FONT_SIZE = FONT_SMALL
-            const val LINE_INTERVAL = 3.0
-            const val H_CONTENT_PADDING = 4.0
-            const val V_CONTENT_PADDING = 4.0
-            const val LABEL_VALUE_INTERVAL = 8.0
+            const val LINE_INTERVAL = 6.0
+            const val INTERVAL_BETWEEN_SUBSTRINGS = 3.0
+            const val H_CONTENT_PADDING = 6.0
+            const val V_CONTENT_PADDING = 6.0
+            const val CONTENT_EXTENDED_PADDING = 10.0
 
+            const val LABEL_VALUE_INTERVAL = 8.0
+            const val VALUE_LINE_MAX_LENGTH = 30
+
+            const val LINE_SEPARATOR_WIDTH = 0.7
+
+            const val BORDER_RADIUS = 4.0
+            const val COLOR_BAR_WIDTH = 4.0
+            const val COLOR_BARS_MARGIN = 0.5
             const val BORDER_WIDTH = 4.0
 
             val DARK_TEXT_COLOR = Color.BLACK
