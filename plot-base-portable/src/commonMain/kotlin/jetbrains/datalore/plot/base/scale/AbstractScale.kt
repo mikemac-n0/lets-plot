@@ -93,11 +93,11 @@ internal abstract class AbstractScale<DomainT, T> : Scale<T> {
         }
 
         // generate labels
-        val formatter: (Any) -> String = labelFormatter ?: { v: Any -> v.toString() }
-        //return breaks.map { formatter(it as Any) }
+        val labelFormatter: (Any) -> String = labelFormatter ?: { v: Any -> v.toString() }
+        val valueFormatter = valueFormatter ?: { v: Any -> v }
         return breaks.map {
-            val value = valueFormatter?.invoke(it) ?: it
-            formatter(value)
+            val value = valueFormatter(it as Any)
+            labelFormatter(value)
         }
     }
 
