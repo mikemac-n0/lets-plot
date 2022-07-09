@@ -7,17 +7,17 @@ package jetbrains.datalore.plot.builder.coord
 
 import jetbrains.datalore.base.interval.DoubleSpan
 import jetbrains.datalore.base.geometry.DoubleVector
+import jetbrains.datalore.base.spatial.MercatorUtils
+import jetbrains.datalore.base.spatial.projections.Projection
 import jetbrains.datalore.plot.base.Scale
 import jetbrains.datalore.plot.base.ScaleMapper
-import jetbrains.datalore.plot.base.coord.Projection
 import jetbrains.datalore.plot.base.scale.Mappers
 import jetbrains.datalore.plot.base.scale.ScaleBreaks
 import jetbrains.datalore.plot.common.data.SeriesUtil
 import kotlin.math.abs
 
 internal class ProjectionCoordProvider(
-    private val projectionX: Projection,
-    private val projectionY: Projection,
+    private val projection: Projection,
     xLim: DoubleSpan?,
     yLim: DoubleSpan?,
     flipped: Boolean
@@ -28,7 +28,7 @@ internal class ProjectionCoordProvider(
         yLim: DoubleSpan?,
         flipped: Boolean
     ): CoordProvider {
-        return ProjectionCoordProvider(projectionX, projectionY, xLim, yLim, flipped)
+        return ProjectionCoordProvider(projection, xLim, yLim, flipped)
     }
 
     protected override fun adjustDomainsIntern(
@@ -36,10 +36,10 @@ internal class ProjectionCoordProvider(
         vDomain: DoubleSpan
     ): Pair<DoubleSpan, DoubleSpan> {
         @Suppress("NAME_SHADOWING")
-        val xDomain = projectionX.toValidDomain(hDomain)
+        val xDomain = toValidDomain(projection.validRect().xRange(), hDomain)
 
         @Suppress("NAME_SHADOWING")
-        val yDomain = projectionY.toValidDomain(vDomain)
+        val yDomain = toValidDomain(projection.validRect().yRange(), vDomain)
         return (xDomain to yDomain)
     }
 
@@ -63,7 +63,7 @@ internal class ProjectionCoordProvider(
         domain: DoubleSpan,
         breaks: ScaleBreaks
     ): Scale<Double> {
-        return if (projectionX.nonlinear) {
+        return if (projection.nonlinear) {
             buildAxisScaleWithProjection(
                 projectionX,
                 scaleProto,
@@ -117,14 +117,36 @@ internal class ProjectionCoordProvider(
     }
 
 
+    private fun toValidDomainY(domain: DoubleSpan): DoubleSpan {
+        if (projection.validRect().yRange().connected(domain)) {
+            return projection.validRect().yRange().intersection(domain)
+        }
+        throw IllegalArgumentException("Illegal latitude range: $domain")
+    }
+
+    private fun toValidDomainX(domain: DoubleSpan): DoubleSpan {
+        if (projection.validRect().xRange().connected(domain)) {
+            return projection.validRect().xRange().intersection(domain)
+        }
+        throw IllegalArgumentException("Illegal longitude range: $domain")
+    }
+
+
     companion object {
+        private fun toValidDomain(validRangle: DoubleSpan, domain: DoubleSpan): DoubleSpan {
+            if (validRangle.connected(domain)) {
+                return validRangle.intersection(domain)
+            }
+            throw IllegalArgumentException("Illegal range: $domain")
+        }
+
         private fun buildAxisScaleWithProjection(
             projection: Projection, scaleProto: Scale<Double>,
             domain: DoubleSpan,
             breaks: ScaleBreaks
         ): Scale<Double> {
 
-            val validDomain = projection.toValidDomain(domain)
+            val validDomain = toValidDomain(projection.validRect().xRange(), domain)
             val validBreaks = validateBreaks(validDomain, breaks)
             return buildAxisScaleDefault(
                 scaleProto,
@@ -166,7 +188,7 @@ internal class ProjectionCoordProvider(
                 axisLength
             )
 
-            val validDomain = projection.toValidDomain(domain)
+            val validDomain = toValidDomain(projection.validRect().xRange(), domain)
             val validDomainProjected = DoubleSpan(
                 projection.apply(validDomain.lowerEnd),
                 projection.apply(validDomain.upperEnd)

@@ -6,6 +6,7 @@
 package jetbrains.datalore.plot.builder.coord
 
 import jetbrains.datalore.base.interval.DoubleSpan
+import jetbrains.datalore.base.spatial.projections.mercator
 import jetbrains.datalore.plot.builder.coord.map.MercatorProjectionX
 import jetbrains.datalore.plot.builder.coord.map.MercatorProjectionY
 
@@ -33,12 +34,16 @@ object CoordProviders {
     fun map(
         xLim: DoubleSpan? = null,
         yLim: DoubleSpan? = null,
-        flipped: Boolean = false
+        flipped: Boolean = false,
+        projection: String = "mercator"
     ): CoordProvider {
         // Only Mercator so far.
+        val mapProjection = when (projection) {
+            "mercator" -> mercator()
+            else -> mercator()
+        }
         return ProjectionCoordProvider(
-            MercatorProjectionX(),
-            MercatorProjectionY(),
+            mapProjection,
             xLim,
             yLim,
             flipped
